@@ -259,7 +259,15 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   <header style="position:relative">
     <div style="position:absolute;inset:0;background:linear-gradient(to bottom, rgba(8,4,4,0.82) 0%, rgba(8,4,4,0.72) 60%, rgba(8,4,4,0.55) 100%);border-radius:0;pointer-events:none;z-index:0"></div>
     <div style="position:relative;z-index:1">
-    <div class="eyebrow">Live API &middot; Cloud Sync &middot; YGOPRODeck</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:8px">
+    <div class="eyebrow" style="margin-bottom:0">Live API &middot; Cloud Sync &middot; YGOPRODeck</div>
+    <div class="active-profile-bar">
+      <span>Viewing:</span>
+      <span class="active-profile-name" id="activeProfileLabel">—</span>
+      <button class="btn-test" onclick="showProfileScreen()" style="padding:4px 12px;font-size:9px">Switch Profile</button>
+    </div>
+  </div>
+  <div class="eyebrow" style="display:none">placeholder</div>
     <h1>Scott's Yu-Gi-Oh!<br>Collection Tracker</h1>
     <p class="subtitle">Search. Add. Sort. Enjoy.</p>
     </div>
@@ -483,7 +491,12 @@ window.onload = function() {
     appId: "1:725120094141:web:ba9d638ce4c1a20d04ccd4"
   });
   var db = firebase.firestore();
-  var col = db.collection('cards');
+
+  // Active profile state
+  var activeProfileId = localStorage.getItem('activeProfileId') || null;
+  var activeProfileName = localStorage.getItem('activeProfileName') || null;
+  var col = null;
+  var cardsUnsub = null;
 
   var selCard = null;
   var cards = [];
@@ -503,16 +516,20 @@ window.onload = function() {
     lbl.textContent = msg;
   }
 
-  // Firestore listener
-  sync('syncing', 'Connecting...');
-  col.orderBy('addedAt','asc').onSnapshot(function(snap) {
-    cards = snap.docs.map(function(d) { var o = d.data(); o.fid = d.id; return o; });
-    renderTable();
+  // Profile-scoped Firestore listener
+  function startProfileListener(profileId) {
+    if (cardsUnsub) { cardsUnsub(); cardsUnsub = null; }
+    col = db.collection('profiles').doc(profileId).collection('cards');
+    sync('syncing', 'Connecting...');
+    cardsUnsub = col.orderBy('addedAt','asc').onSnapshot(function(snap) {
+      cards = snap.docs.map(function(d) { var o = d.data(); o.fid = d.id; return o; });
+      renderTable();
     sync('synced', 'Synced ' + new Date().toLocaleTimeString());
   }, function(err) {
     sync('error', 'Error: ' + err.code);
     renderTable();
   });
+  } // end startProfileListener
 
   // Search input
   inp.addEventListener('input', function() {
@@ -832,7 +849,7 @@ window.onload = function() {
       // Find card data before deleting for undo
       var card = cards.find(function(c){ return c.fid === id; });
       sync('syncing','Removing...');
-      db.collection('cards').doc(id).delete().then(function() {
+      col.doc(id).delete().then(function() {
         if (!card) return;
         // Show undo toast
         var t = document.getElementById('toast');
@@ -1196,7 +1213,7 @@ window.onload = function() {
       var card = cards.find(function(c){ return c.fid === id; });
       if (!card) return;
       var newQty = Math.max(1, (card.qty||1) + delta);
-      db.collection('cards').doc(id).update({ qty: newQty }).catch(function(e){ toast('Update failed'); });
+      col.doc(id).update({ qty: newQty }).catch(function(e){ toast('Update failed'); });
     });
   };
 
@@ -1371,7 +1388,7 @@ window.onload = function() {
         sideCount:  deck.side.reduce(function(s,d){ return s+d.qty; },0),
         savedAt: Date.now()
       };
-      db.collection('decks').add(deckData).then(function() {
+      db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData).then(function() {
         toast('Deck saved: ' + name);
       }).catch(function(e){ toast('Save failed: ' + e.message); });
     });
@@ -1380,7 +1397,7 @@ window.onload = function() {
   // ── Load saved decks from Firestore ───────────────────────
   var savedDecks = [];
   function loadSavedDecks() {
-    db.collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
+    db.collection('profiles').doc(activeProfileId).collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
       savedDecks = [];
       snap.forEach(function(doc) {
         savedDecks.push(Object.assign({ did: doc.id }, doc.data()));
@@ -1465,7 +1482,7 @@ window.onload = function() {
 
   window.deleteSavedDeck = function(did, name) {
     requireAuth(function() {
-      db.collection('decks').doc(did).delete().then(function(){
+      db.collection('profiles').doc(activeProfileId).collection('decks').doc(did).delete().then(function(){
         toast('Deleted: ' + name);
       }).catch(function(e){ toast('Delete failed'); });
     });
@@ -1484,6 +1501,157 @@ window.onload = function() {
     a.click();
     toast('Exported: ' + d.name);
   };
+
+  // ══ Profile Management ══════════════════════════════════════
+
+  function selectProfile(profileId, profileName) {
+    activeProfileId = profileId;
+    activeProfileName = profileName;
+    localStorage.setItem('activeProfileId', profileId);
+    localStorage.setItem('activeProfileName', profileName);
+    // Update header label
+    var lbl = document.getElementById('activeProfileLabel');
+    if (lbl) lbl.textContent = profileName;
+    // Hide profile screen, show app
+    document.getElementById('profileScreen').classList.remove('active');
+    // Start scoped listeners
+    authed = false;
+    updateLockBtn();
+    startProfileListener(profileId);
+    loadSavedDecks();
+    // Reset deck builder
+    deck = { main: [], extra: [], side: [] };
+    renderDeck();
+  }
+
+  window.showProfileScreen = function() {
+    document.getElementById('profileScreen').classList.add('active');
+    loadProfiles();
+  };
+
+  function loadProfiles() {
+    var grid = document.getElementById('profileGrid');
+    grid.innerHTML = '<div style="color:var(--silver-dim);font-family:Cinzel,serif;font-size:11px;letter-spacing:2px">Loading...</div>';
+    db.collection('profiles').orderBy('createdAt','asc').get().then(function(snap) {
+      grid.innerHTML = '';
+      snap.forEach(function(doc) {
+        var p = doc.data();
+        var initial = (p.name || '?')[0].toUpperCase();
+        var wrap = document.createElement('div');
+        wrap.className = 'profile-card-wrap';
+        var card = document.createElement('div');
+        card.className = 'profile-card';
+        card.innerHTML = '<div class="profile-avatar">' + initial + '</div>'
+          + '<div class="profile-name">' + esc(p.name) + '</div>'
+          + '<div class="profile-meta">' + (p.cardCount || 0) + ' cards</div>';
+        card.onclick = function() { selectProfile(doc.id, p.name); };
+        // Delete button (only shown on hover via CSS, requires auth)
+        var delBtn = document.createElement('button');
+        delBtn.className = 'profile-del-btn';
+        delBtn.title = 'Delete profile';
+        delBtn.innerHTML = '&#x2715;';
+        delBtn.onclick = function(e) {
+          e.stopPropagation();
+          deleteProfile(doc.id, p.name);
+        };
+        wrap.appendChild(card);
+        wrap.appendChild(delBtn);
+        grid.appendChild(wrap);
+      });
+      // Add "New Profile" card
+      var newCard = document.createElement('div');
+      newCard.className = 'profile-card new-profile';
+      newCard.innerHTML = '<div class="profile-avatar" style="font-size:28px;border-style:dashed">+</div>'
+        + '<div class="profile-name">New Profile</div>';
+      newCard.onclick = function() {
+        requireAuth(function() {
+          document.getElementById('newProfileModal').style.display = 'flex';
+          setTimeout(function(){ document.getElementById('newProfileName').focus(); }, 50);
+        });
+      };
+      grid.appendChild(newCard);
+    }).catch(function(e) {
+      grid.innerHTML = '<div style="color:#f87171;font-family:Cinzel,serif;font-size:11px">Error loading profiles: ' + e.message + '</div>';
+    });
+  }
+
+  window.createProfile = function() {
+    var name = document.getElementById('newProfileName').value.trim();
+    var errEl = document.getElementById('newProfileError');
+    if (!name) { errEl.textContent = 'Please enter a name'; return; }
+    if (name.length > 24) { errEl.textContent = 'Name too long (max 24 chars)'; return; }
+    errEl.textContent = '';
+    db.collection('profiles').add({
+      name: name,
+      cardCount: 0,
+      createdAt: Date.now()
+    }).then(function(ref) {
+      closeNewProfileModal();
+      selectProfile(ref.id, name);
+    }).catch(function(e) {
+      errEl.textContent = 'Error: ' + e.message;
+    });
+  };
+
+  window.closeNewProfileModal = function() {
+    document.getElementById('newProfileModal').style.display = 'none';
+    document.getElementById('newProfileName').value = '';
+    document.getElementById('newProfileError').textContent = '';
+  };
+
+  function deleteProfile(profileId, profileName) {
+    requireAuth(function() {
+      if (!confirm('Delete profile "' + profileName + '"? This cannot be undone.')) return;
+      // Delete all cards and decks subcollections then the profile doc
+      // Firestore doesn't auto-delete subcollections — batch delete cards first
+      var batch = db.batch();
+      var profileRef = db.collection('profiles').doc(profileId);
+      // Get all cards and decks to delete
+      Promise.all([
+        profileRef.collection('cards').get(),
+        profileRef.collection('decks').get()
+      ]).then(function(results) {
+        results.forEach(function(snap) {
+          snap.forEach(function(doc) { batch.delete(doc.ref); });
+        });
+        batch.delete(profileRef);
+        return batch.commit();
+      }).then(function() {
+        toast('Profile deleted: ' + profileName);
+        if (activeProfileId === profileId) {
+          activeProfileId = null;
+          activeProfileName = null;
+          localStorage.removeItem('activeProfileId');
+          localStorage.removeItem('activeProfileName');
+          showProfileScreen();
+        } else {
+          loadProfiles();
+        }
+      }).catch(function(e) { toast('Delete failed: ' + e.message); });
+    });
+  }
+
+  // ── Key handler for new profile modal ──
+  document.getElementById('newProfileName').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') createProfile();
+    if (e.key === 'Escape') closeNewProfileModal();
+  });
+
+  // ── On load: show profile screen (auto-select if remembered) ──
+  if (activeProfileId && activeProfileName) {
+    // Verify profile still exists before auto-selecting
+    db.collection('profiles').doc(activeProfileId).get().then(function(doc) {
+      if (doc.exists) {
+        selectProfile(activeProfileId, activeProfileName);
+      } else {
+        localStorage.removeItem('activeProfileId');
+        localStorage.removeItem('activeProfileName');
+        loadProfiles();
+      }
+    }).catch(function() { loadProfiles(); });
+  } else {
+    loadProfiles();
+  }
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
