@@ -402,19 +402,41 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Try each variant in sequence, stopping at the first success
+    // Also try archetype search — handles "Blue-Eyes", "Dark Magician" etc.
+    // which are archetypes with hundreds of variants that break fname
+    var archetypeGuess = norm.replace(/-/g, ' ');
+
+    function tryFetch(url) {
+      return fetch(url).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+    }
+
+    function hasResults(d) { return d && d.data && d.data.length > 0; }
+
     function tryVariant(idx) {
-      if (idx >= variants.length) { statusEl.textContent = 'No cards found'; closeAc(); return; }
-      var v = variants[idx];
-      fetch(base + '?fname=' + encodeURIComponent(v) + '&num=10&offset=0')
-        .then(function(r) {
-          if (r.ok) return r.json().then(function(d) {
-            if (d && d.data && d.data.length) { handleData(d); return; }
-            tryVariant(idx + 1);
+      if (idx >= variants.length) {
+        // All fname variants exhausted — try archetype as last resort
+        tryFetch(base + '?archetype=' + encodeURIComponent(archetypeGuess) + '&num=10&offset=0')
+          .then(function(d) {
+            if (hasResults(d)) { handleData(d); return; }
+            // Final fallback: first word as archetype
+            var fw = archetypeGuess.split(' ')[0];
+            if (fw.length >= 3) {
+              return tryFetch(base + '?archetype=' + encodeURIComponent(fw) + '&num=10&offset=0')
+                .then(function(d2) {
+                  if (hasResults(d2)) { handleData(d2); return; }
+                  statusEl.textContent = 'No cards found'; closeAc();
+                });
+            }
+            statusEl.textContent = 'No cards found'; closeAc();
           });
-          // 400 or other error — try next variant
+        return;
+      }
+      var v = variants[idx];
+      tryFetch(base + '?fname=' + encodeURIComponent(v) + '&num=10&offset=0')
+        .then(function(d) {
+          if (hasResults(d)) { handleData(d); return; }
           tryVariant(idx + 1);
-        })
-        .catch(function() { tryVariant(idx + 1); });
+        });
     }
 
     tryVariant(0);
