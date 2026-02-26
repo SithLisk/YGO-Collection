@@ -741,7 +741,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       var nameClick = 'openCardModal(' + JSON.stringify(e.name) + ')';
       h += '<td class="td-nm"><span class="dot ' + dc + '"></span><span class="card-link" onclick="' + esc(nameClick) + '">' + esc(e.name) + '</span>' + lvlStr + '</td>';
-      h += '<td class="td-sm">' + esc(e.race||'—') + '</td>';
+      var typeDisplay = (function() {
+        var t = (e.type||'').toLowerCase();
+        if (t.indexOf('spell') !== -1) return 'Spell';
+        if (t.indexOf('trap')  !== -1) return 'Trap';
+        return e.race || '—';
+      })();
+      h += '<td class="td-sm">' + esc(typeDisplay) + '</td>';
       h += '<td class="td-sm">' + attrBadge(e.attribute) + '</td>';
       h += '<td class="td-sm">' + esc(e.archetype) + '</td>';
       h += '<td class="td-atk">' + (e.atk!=='—' ? e.atk+' / '+e.def : '—') + '</td>';
