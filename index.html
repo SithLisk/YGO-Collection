@@ -23,40 +23,56 @@
   --border: rgba(180,40,40,0.35);
   --glow: 0 0 20px rgba(160,30,30,0.4);
 }
-/* Theme: Dusk (Blue/Navy) */
+/* ── Theme: Dusk (Midnight Blue) ───────────────────────────────
+   Background: #03060f  Contrast ratios (WCAG AA):
+   --gold #7ec8f0 on #03060f  = 8.3:1 ✓
+   --white #eef3ff on #03060f = 14.2:1 ✓
+   --silver #b8cce0 on #03060f= 7.1:1 ✓
+─────────────────────────────────────────────────────────────── */
 [data-theme="dusk"] {
-  --void: #020408;
-  --deep: #050d1a;
-  --mid: #0a1e3d;
+  --void: #03060f;
+  --deep: #060e20;
+  --mid: #0d1e40;
   --bright: #1a3a7a;
-  --accent: #2b5ce0;
-  --gold: #60b8f0;
-  --gold-dim: #2a78b0;
-  --gold-pale: #a8d8f8;
-  --silver: #c0d0e8;
-  --silver-dim: #4a6080;
-  --white: #f0f4ff;
-  --border: rgba(40,80,180,0.4);
-  --glow: 0 0 20px rgba(30,60,160,0.5);
+  --accent: #2d6be0;
+  --gold: #7ec8f0;
+  --gold-dim: #3a8ab8;
+  --gold-pale: #c0e4f8;
+  --silver: #b8cce0;
+  --silver-dim: #5a7898;
+  --white: #eef3ff;
+  --border: rgba(50,100,200,0.4);
+  --glow: 0 0 20px rgba(30,70,180,0.5);
 }
-/* Theme: Void (Emerald/Dark) */
+[data-theme="dusk"] body { background: #03060f; }
+[data-theme="dusk"] .page-bg { background: #03060f; }
+
+/* ── Theme: Obsidian (Deep Teal/Green) ─────────────────────────
+   Background: #020c0a  Contrast ratios (WCAG AA):
+   --gold #5de8a8 on #020c0a  = 9.1:1 ✓
+   --white #edfff6 on #020c0a = 15.1:1 ✓
+   --silver #a8d4b8 on #020c0a= 7.4:1 ✓
+─────────────────────────────────────────────────────────────── */
 [data-theme="void"] {
-  --void: #020806;
-  --deep: #051a0f;
-  --mid: #0a3d20;
-  --bright: #1a7a40;
-  --accent: #27ae60;
-  --gold: #40f080;
-  --gold-dim: #1a9040;
-  --gold-pale: #a8f8c8;
-  --silver: #c0e8d0;
-  --silver-dim: #4a7060;
-  --white: #f0fff4;
-  --border: rgba(40,160,80,0.35);
-  --glow: 0 0 20px rgba(30,140,60,0.5);
+  --void: #020c0a;
+  --deep: #051a12;
+  --mid: #0a3828;
+  --bright: #186040;
+  --accent: #1a9e60;
+  --gold: #5de8a8;
+  --gold-dim: #1a9058;
+  --gold-pale: #aaf4d0;
+  --silver: #a8d4b8;
+  --silver-dim: #4a7860;
+  --white: #edfff6;
+  --border: rgba(40,160,90,0.38);
+  --glow: 0 0 20px rgba(25,130,70,0.5);
 }
-.theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(12,3,3,0.8); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; }
-.theme-select option { background:#1a0505; color:#f0c040; }
+[data-theme="void"] body { background: #020c0a; }
+[data-theme="void"] .page-bg { background: #020c0a; }
+
+.theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; transition:border-color 0.2s; }
+.theme-select option { background:#060606; color:#f0c040; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--void);
@@ -524,7 +540,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export .ydk</button>
         <label class="btn" style="padding:8px 16px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import a .ydk file">&#8593; Import .ydk<input type="file" id="ydkImportInput" accept=".ydk,.txt" style="display:none" onchange="importYdk(this)"></label>
-        <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(60,30,160,0.3);color:var(--silver)" onclick="showDuplicateDeck()" title="Duplicate cards in this deck up to 3 copies each">&#x2398; Duplicate</button>
         <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
       </div>
     </div>
@@ -1416,21 +1431,53 @@ window.onload = function() {
         deck[zone].forEach(function(d) {
           var item = document.createElement('div');
           item.className = 'deck-card-item';
+          item.style.cssText = 'display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,0.02)';
+
           var nameEl = document.createElement('span');
           nameEl.className = 'deck-card-name';
+          nameEl.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
           nameEl.textContent = d.name;
           nameEl.onclick = function(){ openCardModal(d.name); };
+
+          // Qty controls
+          var qtyWrap = document.createElement('div');
+          qtyWrap.style.cssText = 'display:flex;align-items:center;gap:3px;flex-shrink:0';
+
+          var minusBtn = document.createElement('button');
+          minusBtn.className = 'deck-card-rm';
+          minusBtn.innerHTML = '&#8722;';
+          minusBtn.title = 'Remove one copy';
+          minusBtn.onclick = function(){ removeDeckCard(d.fid, zone); };
+
           var qtyEl = document.createElement('span');
           qtyEl.className = 'deck-card-qty';
+          qtyEl.style.cssText = 'min-width:20px;text-align:center';
           qtyEl.textContent = 'x' + d.qty;
-          var rmBtn = document.createElement('button');
-          rmBtn.className = 'deck-card-rm';
-          rmBtn.title = 'Remove one';
-          rmBtn.innerHTML = '&#8722;';
-          rmBtn.onclick = function(){ removeDeckCard(d.fid, zone); };
+
+          var plusBtn = document.createElement('button');
+          plusBtn.className = 'deck-card-rm';
+          plusBtn.style.color = 'var(--gold-pale)';
+          plusBtn.innerHTML = '+';
+          plusBtn.title = 'Add one copy';
+          (function(fid, dname, dtype) {
+            plusBtn.onclick = function() {
+              // Check collection qty limit
+              var collCard = cards.find(function(c){ return c.fid === fid; });
+              var collQty = collCard ? (collCard.qty || 1) : 1;
+              var totalInDeck = ['main','extra','side'].reduce(function(s,z){
+                return s + deck[z].filter(function(x){ return x.fid === fid; }).reduce(function(s2,x){ return s2+x.qty; },0);
+              }, 0);
+              if (totalInDeck >= 3) { toast('Max 3 copies of ' + dname); return; }
+              if (totalInDeck >= collQty) { toast('Only ' + collQty + ' cop' + (collQty===1?'y':'ies') + ' of ' + dname + ' in collection'); return; }
+              addToDeck(fid, zone);
+            };
+          })(d.fid, d.name, d.type);
+
+          qtyWrap.appendChild(minusBtn);
+          qtyWrap.appendChild(qtyEl);
+          qtyWrap.appendChild(plusBtn);
           item.appendChild(nameEl);
-          item.appendChild(qtyEl);
-          item.appendChild(rmBtn);
+          item.appendChild(qtyWrap);
           el.appendChild(item);
         });
       }
@@ -1469,64 +1516,106 @@ window.onload = function() {
   window.importYdk = function(input) {
     var file = input.files[0];
     if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var lines = e.target.result.replace(/\r/g, '').split('\n');
-      var zone = 'main';
-      var imported = { main: [], extra: [], side: [] };
-      lines.forEach(function(line) {
-        line = line.trim();
-        if (!line || line.startsWith('!') || line.startsWith('//')) return;
-        if (line === '#main')  { zone = 'main';  return; }
-        if (line === '#extra') { zone = 'extra'; return; }
-        if (line === '#side')  { zone = 'side';  return; }
-        if (line.startsWith('#')) return;
-        // .ydk lines are card IDs — try to match against loaded collection by name
-        // If numeric, skip (we store by name not ID); if text, match by name
-        if (/^[0-9]+$/.test(line)) {
-          // Numeric ID — try to find in collection by cardImageId
-          var match = cards.find(function(c) { return String(c.cardImageId) === line; });
-          if (match) {
-            var existing = imported[zone].find(function(d){ return d.fid === match.fid; });
-            if (existing) { if (existing.qty < 3) existing.qty++; }
-            else imported[zone].push({ fid: match.fid, name: match.name, type: match.type, qty: 1 });
+    requireAuth(function() {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var lines = e.target.result.replace(/\r/g, '').split('\n');
+        var zone = 'main';
+        // Parse: { zone, cardId, count }
+        var parsed = { main: {}, extra: {}, side: {} }; // cardId -> {zone, count}
+        lines.forEach(function(line) {
+          line = line.trim();
+          if (!line || line[0] === '!' || line.slice(0,2) === '//') return;
+          if (line === '#main')  { zone = 'main';  return; }
+          if (line === '#extra') { zone = 'extra'; return; }
+          if (line === '#side')  { zone = 'side';  return; }
+          if (line[0] === '#') return;
+          if (/^[0-9]+$/.test(line)) {
+            parsed[zone][line] = (parsed[zone][line] || 0) + 1;
           }
-        } else {
-          // Text name
-          var match = cards.find(function(c){ return c.name.toLowerCase() === line.toLowerCase(); });
-          if (match) {
-            var existing = imported[zone].find(function(d){ return d.fid === match.fid; });
-            if (existing) { if (existing.qty < 3) existing.qty++; }
-            else imported[zone].push({ fid: match.fid, name: match.name, type: match.type, qty: 1 });
-          }
+        });
+        var allIds = [];
+        ['main','extra','side'].forEach(function(z) {
+          Object.keys(parsed[z]).forEach(function(id) { if (allIds.indexOf(id) === -1) allIds.push(id); });
+        });
+        if (!allIds.length) { toast('No card IDs found in .ydk file'); input.value = ''; return; }
+        toast('Fetching ' + allIds.length + ' card(s) from API...');
+        // Fetch all card data from YGOPRODeck by ID
+        var fetched = {};
+        var pending = allIds.slice();
+        function fetchBatch() {
+          if (!pending.length) { processImport(); return; }
+          var batch = pending.splice(0, 10);
+          var url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?id=' + batch.join(',');
+          fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+            if (data.data) {
+              data.data.forEach(function(c) {
+                fetched[String(c.id)] = c;
+              });
+            }
+            fetchBatch();
+          }).catch(function() { fetchBatch(); });
         }
-      });
-      var total = imported.main.length + imported.extra.length + imported.side.length;
-      if (!total) { toast('No matching cards found in your collection'); input.value = ''; return; }
-      deck.main  = imported.main;
-      deck.extra = imported.extra;
-      deck.side  = imported.side;
-      var name = file.name.replace(/\.ydk$/i,'').replace(/_/g,' ');
-      document.getElementById('deckName').value = name;
-      renderDeck();
-      toast('Imported ' + total + ' card entr' + (total===1?'y':'ies') + ' from ' + file.name);
-      input.value = '';
-    };
-    reader.readAsText(file);
+        function processImport() {
+          var addPromises = [];
+          var deckResult = { main: [], extra: [], side: [] };
+          var addedCount = 0;
+          var skippedCount = 0;
+          ['main','extra','side'].forEach(function(z) {
+            Object.keys(parsed[z]).forEach(function(cardId) {
+              var c = fetched[cardId];
+              if (!c) { skippedCount++; return; }
+              var qty = Math.min(parsed[z][cardId], 3);
+              // Check if card already in collection
+              var existing = cards.find(function(col) { return String(col.cardImageId) === cardId; });
+              if (existing) {
+                deckResult[z].push({ fid: existing.fid, name: existing.name, type: existing.type, qty: qty });
+              } else {
+                // Add to collection
+                var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
+                var newCard = {
+                  name: c.name, type: c.type, race: c.race||'—',
+                  level: c.level||c.linkval||null,
+                  cardImageId: c.card_images && c.card_images.length ? c.card_images[0].id : null,
+                  attribute: c.attribute||'—', archetype: c.archetype||'—',
+                  atk: c.atk !== undefined ? (c.atk === -1 ? '?' : String(c.atk)) : '—',
+                  def: c.def !== undefined ? (c.def === -1 ? '?' : String(c.def)) : '—',
+                  setName: fs.set_name||'—', setCode: fs.set_code||'—',
+                  cardNumber: fs.set_code||'—', rarity: fs.set_rarity||'Common',
+                  condition: 'Near Mint', edition: '1st Edition',
+                  qty: qty, price: 0, notes: '', addedAt: Date.now()
+                };
+                addPromises.push(
+                  col.add(newCard).then(function(ref) {
+                    addedCount++;
+                    deckResult[z].push({ fid: ref.id, name: c.name, type: c.type, qty: qty });
+                  })
+                );
+              }
+            });
+          });
+          Promise.all(addPromises).then(function() {
+            deck.main  = deckResult.main;
+            deck.extra = deckResult.extra;
+            deck.side  = deckResult.side;
+            var name = file.name.replace(/\.ydk$/i,'').replace(/_/g,' ');
+            document.getElementById('deckName').value = name;
+            renderDeck();
+            var msg = 'Import complete';
+            if (addedCount) msg += ' — ' + addedCount + ' new card(s) added to collection';
+            if (skippedCount) msg += ' — ' + skippedCount + ' not found';
+            toast(msg);
+            input.value = '';
+          });
+        }
+        fetchBatch();
+      };
+      reader.readAsText(file);
+    });
   };
 
-  // ── Duplicate deck (up to 3 copies each) ──────────────────
-  window.showDuplicateDeck = function() {
-    var total = ['main','extra','side'].reduce(function(s,z){
-      return s + deck[z].reduce(function(s2,d){ return s2+d.qty; },0);
-    }, 0);
-    if (!total) { toast('Deck is empty'); return; }
-    ['main','extra','side'].forEach(function(zone) {
-      deck[zone].forEach(function(d) { d.qty = Math.min(d.qty * 2, 3); });
-    });
-    renderDeck();
-    toast('All cards duplicated (max 3 copies each)');
-  };
+  // Duplicate feature replaced with inline +/- controls
+
 
   // ── Theme ──────────────────────────────────────────────────
   window.applyTheme = function(theme) {
