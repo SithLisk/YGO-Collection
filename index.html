@@ -184,7 +184,23 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
       <div class="sync-dot" id="syncDot"></div>
       <span id="syncLabel">Connecting&hellip;</span>
     </div>
-    <span style="color:var(--silver-dim);font-size:9px;letter-spacing:1px">Changes sync automatically across all devices</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="color:var(--silver-dim);font-size:9px;letter-spacing:1px">Changes sync automatically across all devices</span>
+      <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
+    </div>
+  </div>
+
+  <!-- Password modal -->
+  <div id="pwModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:#1a0505;border:1px solid var(--border);border-radius:16px;padding:36px;min-width:320px;box-shadow:var(--glow);text-align:center">
+      <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:20px">Enter Password</div>
+      <input type="password" id="pwInput" placeholder="Password" style="width:100%;margin-bottom:12px" onkeydown="if(event.key==='Enter')submitPw()">
+      <div id="pwError" style="color:#f87171;font-size:13px;font-style:italic;margin-bottom:12px;min-height:18px"></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn btn-add" onclick="submitPw()" style="padding:9px 20px;font-size:10px">Unlock</button>
+        <button class="btn-test" onclick="closePwModal()" style="align-self:center">Cancel</button>
+      </div>
+    </div>
   </div>
 
   <div class="search-panel">
@@ -469,8 +485,74 @@ document.addEventListener('DOMContentLoaded', function() {
     } else { wrap.innerHTML = '<div class="img-ph">&#x1F0A3;</div>'; }
   }
 
+  // Auth state
+  var PW_HASH = '663dc2bedc7eb3349bc80bff0c508111936a2a0d18269353a7ef7020ae24cc18';
+  var authed = false;
+
+  function sha256(str) {
+    // Use SubtleCrypto to hash the password
+    var buf = new TextEncoder().encode(str);
+    return crypto.subtle.digest('SHA-256', buf).then(function(hash) {
+      return Array.from(new Uint8Array(hash)).map(function(b) { return b.toString(16).padStart(2,'0'); }).join('');
+    });
+  }
+
+  window.toggleAuth = function() {
+    if (authed) {
+      authed = false;
+      updateLockBtn();
+      toast('Locked');
+    } else {
+      document.getElementById('pwModal').style.display = 'flex';
+      setTimeout(function() { document.getElementById('pwInput').focus(); }, 50);
+    }
+  };
+
+  window.closePwModal = function() {
+    document.getElementById('pwModal').style.display = 'none';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwError').textContent = '';
+  };
+
+  window.submitPw = function() {
+    var val = document.getElementById('pwInput').value;
+    sha256(val).then(function(hash) {
+      if (hash === PW_HASH) {
+        authed = true;
+        closePwModal();
+        updateLockBtn();
+        toast('Unlocked — you can now edit your collection');
+      } else {
+        document.getElementById('pwError').textContent = 'Incorrect password';
+        document.getElementById('pwInput').value = '';
+      }
+    });
+  };
+
+  function updateLockBtn() {
+    var btn = document.getElementById('lockBtn');
+    if (authed) {
+      btn.innerHTML = '&#x1F513; Unlocked';
+      btn.style.color = '#4ade80';
+      btn.style.borderColor = 'rgba(74,222,128,0.4)';
+    } else {
+      btn.innerHTML = '&#x1F512; Locked';
+      btn.style.color = 'var(--gold-pale)';
+      btn.style.borderColor = 'rgba(160,30,30,0.5)';
+    }
+  }
+
+  function requireAuth(action) {
+    if (authed) { action(); return; }
+    document.getElementById('pwModal').style.display = 'flex';
+    setTimeout(function() { document.getElementById('pwInput').focus(); }, 50);
+  }
+
   // Add card
   window.addToCollection = function() {
+    requireAuth(function() { doAdd(); });
+  };
+  function doAdd() {
     if (!selCard) return;
     var c = selCard;
     var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
@@ -493,12 +575,14 @@ document.addEventListener('DOMContentLoaded', function() {
       document.getElementById('fPrice').value = '';
       document.getElementById('fNotes').value = '';
     }).catch(function(e) { sync('error','Save failed'); toast('Save failed: ' + e.message); });
-  };
+  }
 
   // Remove card
   window.removeEntry = function(id) {
-    sync('syncing','Removing...');
-    db.collection('cards').doc(id).delete().catch(function(e) { sync('error','Delete failed'); });
+    requireAuth(function() {
+      sync('syncing','Removing...');
+      db.collection('cards').doc(id).delete().catch(function(e) { sync('error','Delete failed'); });
+    });
   };
 
   // Render table
