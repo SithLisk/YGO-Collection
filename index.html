@@ -5,761 +5,542 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>YGO Collection Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <style>
-  :root {
-    --obsidian: #0e0808;
-    --void: #080404;
-    --purple-deep: #1a0508;
-    --purple-mid: #3d0a10;
-    --purple-bright: #8b1a1a;
-    --purple-glow: #c0392b;
-    --gold: #f0c040;
-    --gold-dim: #b8901a;
-    --gold-pale: #fde68a;
-    --silver: #c8c0d8;
-    --silver-dim: #6b5f7a;
-    --white: #f5f0ff;
-    --border: rgba(180, 40, 40, 0.35);
-    --glow: 0 0 20px rgba(160, 30, 30, 0.4);
-    --glow-gold: 0 0 20px rgba(240, 192, 64, 0.4);
-  }
+:root {
+  --void: #080404;
+  --deep: #1a0505;
+  --mid: #3d0a0a;
+  --bright: #8b1a1a;
+  --accent: #c0392b;
+  --gold: #f0c040;
+  --gold-dim: #b8901a;
+  --gold-pale: #fde68a;
+  --silver: #c8c0d8;
+  --silver-dim: #6b5f7a;
+  --white: #f5f0ff;
+  --border: rgba(180,40,40,0.35);
+  --glow: 0 0 20px rgba(160,30,30,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--void); color: var(--white); font-family: 'Crimson Pro', Georgia, serif; min-height: 100vh; overflow-x: hidden; }
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(160,30,30,0.25) 0%, transparent 60%),
+              radial-gradient(ellipse 40% 30% at 80% 80%, rgba(120,15,15,0.15) 0%, transparent 50%);
+}
+.stars {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 35% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 50% 80%, rgba(240,192,64,0.5) 0%, transparent 100%);
+}
+.wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+header { text-align: center; padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; position: relative; }
+header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 200px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+.eyebrow { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 6px; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 12px; }
+h1 { font-family: 'Cinzel Decorative', serif; font-size: clamp(22px,4vw,38px); font-weight: 700; background: linear-gradient(135deg, var(--gold-pale), var(--gold) 40%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2; margin-bottom: 8px; }
+.subtitle { font-size: 15px; color: var(--silver-dim); font-style: italic; }
 
-  body {
-    background: var(--void);
-    color: var(--white);
-    font-family: 'Crimson Pro', Georgia, serif;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
+.sync-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(25,5,5,0.7); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; margin-bottom: 20px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; flex-wrap: wrap; gap: 10px; }
+.sync-row { display: flex; align-items: center; gap: 8px; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--silver-dim); transition: all 0.3s; }
+.sync-dot.syncing { background: var(--gold); box-shadow: 0 0 8px var(--gold); animation: pulse 1s infinite; }
+.sync-dot.synced  { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
+.sync-dot.error   { background: #f87171; box-shadow: 0 0 8px #f87171; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+#syncLabel { color: var(--silver-dim); }
+#syncLabel.synced  { color: #4ade80; }
+#syncLabel.syncing { color: var(--gold); }
+#syncLabel.error   { color: #f87171; }
 
-  body::before {
-    content: '';
-    position: fixed; inset: 0;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(160, 30, 30, 0.25) 0%, transparent 60%),
-      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(120, 15, 15, 0.15) 0%, transparent 50%),
-      radial-gradient(ellipse 30% 20% at 20% 90%, rgba(80, 10, 10, 0.18) 0%, transparent 50%);
-    pointer-events: none; z-index: 0;
-  }
+.search-panel { background: linear-gradient(135deg, rgba(35,5,5,0.9), rgba(8,4,4,0.95)); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; margin-bottom: 28px; box-shadow: var(--glow); position: relative; }
+.search-panel::before { content: '\2B21'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 20px; color: var(--gold); background: var(--void); padding: 0 8px; }
+.sec-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; }
 
-  .stars {
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background-image:
-      radial-gradient(1px 1px at 15% 20%, rgba(255,255,255,0.6) 0%, transparent 100%),
-      radial-gradient(1px 1px at 35% 8%, rgba(255,255,255,0.4) 0%, transparent 100%),
-      radial-gradient(1px 1px at 60% 35%, rgba(255,255,255,0.5) 0%, transparent 100%),
-      radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
-      radial-gradient(1px 1px at 90% 55%, rgba(255,255,255,0.4) 0%, transparent 100%),
-      radial-gradient(1px 1px at 5% 70%, rgba(255,255,255,0.3) 0%, transparent 100%),
-      radial-gradient(1.5px 1.5px at 50% 80%, rgba(240,192,64,0.5) 0%, transparent 100%),
-      radial-gradient(1px 1px at 72% 90%, rgba(255,255,255,0.35) 0%, transparent 100%);
-  }
+.test-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.btn-test { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: rgba(160,30,30,0.3); color: var(--gold-pale); border: 1px solid rgba(160,30,30,0.5); border-radius: 6px; padding: 6px 14px; cursor: pointer; }
+.btn-test:hover { background: rgba(160,30,30,0.5); }
+#testResult { font-size: 13px; font-style: italic; color: var(--silver-dim); }
 
-  .wrapper { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+.search-row { display: flex; gap: 12px; align-items: center; }
+.search-wrap { flex: 1; position: relative; }
+input[type="text"] { width: 100%; background: rgba(12,3,3,0.8); border: 1px solid var(--border); border-radius: 10px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 17px; padding: 13px 18px; outline: none; transition: border-color 0.2s; }
+input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(160,30,30,0.15); }
+input[type="text"]::placeholder { color: var(--silver-dim); }
+.status-msg { font-size: 13px; font-style: italic; color: var(--silver-dim); min-width: 100px; }
 
-  /* ── HEADER ── */
-  header {
-    text-align: center;
-    padding: 48px 0 32px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 40px;
-    position: relative;
-  }
-  header::after {
-    content: '';
-    position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%);
-    width: 200px; height: 2px;
-    background: linear-gradient(90deg, transparent, var(--gold), transparent);
-  }
-  .title-eyebrow {
-    font-family: 'Cinzel', serif;
-    font-size: 11px; letter-spacing: 6px;
-    color: var(--gold-dim); text-transform: uppercase; margin-bottom: 12px;
-  }
-  h1 {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: clamp(22px, 4vw, 38px); font-weight: 700;
-    background: linear-gradient(135deg, var(--gold-pale) 0%, var(--gold) 40%, var(--purple-glow) 100%);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-    line-height: 1.2; margin-bottom: 8px;
-  }
-  .subtitle { font-size: 15px; color: var(--silver-dim); font-style: italic; }
+.ac-list { position: absolute; top: calc(100% + 6px); left: 0; right: 0; background: rgba(20,5,5,0.98); border: 1px solid var(--border); border-radius: 10px; max-height: 280px; overflow-y: auto; z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: none; }
+.ac-list.open { display: block; }
+.ac-item { padding: 10px 16px; cursor: pointer; font-size: 15px; border-bottom: 1px solid rgba(180,40,40,0.12); display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
+.ac-item:last-child { border-bottom: none; }
+.ac-item:hover, .ac-item.hi { background: rgba(160,30,30,0.25); }
+.tbadge { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; }
+.bm { background: rgba(200,100,30,0.3); color: #f4a261; border: 1px solid rgba(200,100,30,0.4); }
+.bs { background: rgba(20,138,138,0.3); color: #4ecdc4; border: 1px solid rgba(20,138,138,0.4); }
+.bt { background: rgba(155,32,96,0.3); color: #f48fb1; border: 1px solid rgba(155,32,96,0.4); }
 
-  /* ── SYNC STATUS BAR ── */
-  .sync-bar {
-    display: flex; align-items: center; justify-content: space-between;
-    background: rgba(25,5,5,0.7);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px 20px;
-    margin-bottom: 20px;
-    font-family: 'Cinzel', serif;
-    font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
-    flex-wrap: wrap; gap: 10px;
-  }
-  .sync-indicator { display: flex; align-items: center; gap: 8px; }
-  .sync-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--silver-dim);
-    transition: background 0.3s, box-shadow 0.3s;
-  }
-  .sync-dot.syncing { background: var(--gold); box-shadow: 0 0 8px var(--gold); animation: pulse 1s infinite; }
-  .sync-dot.synced  { background: #4ade80; box-shadow: 0 0 8px #4ade80; }
-  .sync-dot.error   { background: #f87171; box-shadow: 0 0 8px #f87171; }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-  .sync-label { color: var(--silver-dim); }
-  .sync-label.synced { color: #4ade80; }
-  .sync-label.syncing { color: var(--gold); }
-  .sync-label.error { color: #f87171; }
+.card-preview { display: none; margin-top: 28px; border-top: 1px solid var(--border); padding-top: 24px; animation: fadeUp 0.3s ease; }
+.card-preview.open { display: block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.preview-grid { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: start; }
+@media(max-width:640px){ .preview-grid { grid-template-columns: 1fr; } }
+.img-wrap { border-radius: 10px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.6), 0 0 20px rgba(240,192,64,0.4); border: 1px solid rgba(240,192,64,0.3); background: var(--deep); aspect-ratio: 59/86; display: flex; align-items: center; justify-content: center; }
+.img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-ph { font-size: 48px; opacity: 0.3; }
+.card-info { display: flex; flex-direction: column; gap: 12px; }
+.card-name { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold-pale); line-height: 1.2; }
+.card-meta { display: flex; flex-wrap: wrap; gap: 8px; }
+.mpill { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; border: 1px solid; }
+.pm { color: #f4a261; border-color: rgba(244,162,97,0.4); background: rgba(244,162,97,0.08); }
+.ps { color: #4ecdc4; border-color: rgba(78,205,196,0.4); background: rgba(78,205,196,0.08); }
+.pt { color: #f48fb1; border-color: rgba(244,143,177,0.4); background: rgba(244,143,177,0.08); }
+.pa { color: var(--accent); border-color: rgba(192,57,43,0.4); background: rgba(192,57,43,0.08); }
+.atk-def { font-family: 'Cinzel', serif; font-size: 13px; color: var(--silver); letter-spacing: 2px; }
+.atk-def b { color: var(--gold); }
+.card-eff { font-size: 13.5px; color: var(--silver); line-height: 1.7; font-style: italic; border-left: 2px solid rgba(192,57,43,0.4); padding-left: 12px; max-height: 120px; overflow-y: auto; }
+.card-set { font-size: 13px; color: var(--silver-dim); }
+.card-set strong { color: var(--silver); }
 
-  /* ── SEARCH PANEL ── */
-  .search-panel {
-    background: linear-gradient(135deg, rgba(35,5,5,0.9) 0%, rgba(13,11,20,0.95) 100%);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 28px 32px;
-    margin-bottom: 28px;
-    box-shadow: var(--glow), inset 0 1px 0 rgba(160,30,30,0.15);
-    position: relative;
-  }
-  .search-panel::before {
-    content: '⬡';
-    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
-    font-size: 20px; color: var(--gold);
-    background: var(--void); padding: 0 8px;
-  }
-  .section-label {
-    font-family: 'Cinzel', serif; font-size: 11px;
-    letter-spacing: 4px; color: var(--purple-glow);
-    text-transform: uppercase; margin-bottom: 18px;
-  }
-  .search-row { display: flex; gap: 12px; align-items: flex-start; }
-  .search-wrap { flex: 1; position: relative; }
+.entry-form { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; gap: 16px; flex-wrap: wrap; }
+.entry-form.open { display: flex; }
+.field { display: flex; flex-direction: column; gap: 6px; min-width: 110px; }
+.field label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver-dim); }
+.field select, .field input { background: rgba(12,3,3,0.8); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 15px; padding: 9px 12px; outline: none; transition: border-color 0.2s; width: 100%; }
+.field select:focus, .field input:focus { border-color: var(--accent); }
+.field select option { background: #1a0505; }
 
-  input[type="text"] {
-    width: 100%;
-    background: rgba(12,3,3,0.8);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--white);
-    font-family: 'Crimson Pro', serif;
-    font-size: 17px;
-    padding: 13px 18px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-  }
-  input[type="text"]:focus { border-color: var(--purple-glow); box-shadow: 0 0 0 3px rgba(160,30,30,0.15); }
-  input[type="text"]::placeholder { color: var(--silver-dim); }
+.btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; border: none; border-radius: 8px; padding: 11px 24px; cursor: pointer; transition: all 0.2s; align-self: flex-end; }
+.btn-add  { background: linear-gradient(135deg, var(--bright), var(--accent)); color: var(--white); box-shadow: 0 4px 16px rgba(139,26,26,0.4); }
+.btn-add:hover  { transform: translateY(-1px); }
+.btn-gold { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void); }
+.btn-gold:hover { transform: translateY(-1px); }
+.btn-del { font-family: 'Cinzel', serif; font-size: 10px; background: rgba(192,57,43,0.2); color: #e07070; border: 1px solid rgba(192,57,43,0.3); border-radius: 6px; padding: 7px 14px; cursor: pointer; transition: background 0.2s; }
+.btn-del:hover { background: rgba(192,57,43,0.4); }
 
-  .autocomplete-list {
-    position: absolute; top: calc(100% + 6px); left: 0; right: 0;
-    background: rgba(25,5,5,0.98);
-    border: 1px solid var(--border); border-radius: 10px;
-    max-height: 280px; overflow-y: auto; z-index: 100;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6); display: none;
-  }
-  .autocomplete-list.show { display: block; }
-  .autocomplete-item {
-    padding: 10px 16px; cursor: pointer; font-size: 15px;
-    border-bottom: 1px solid rgba(180,40,40,0.12);
-    display: flex; justify-content: space-between; align-items: center;
-    transition: background 0.15s;
-  }
-  .autocomplete-item:last-child { border-bottom: none; }
-  .autocomplete-item:hover, .autocomplete-item.active { background: rgba(160,30,30,0.25); }
-  .ac-type-badge {
-    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px;
-    padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0;
-  }
-  .badge-monster { background: rgba(200,100,30,0.3); color: #f4a261; border: 1px solid rgba(200,100,30,0.4); }
-  .badge-spell   { background: rgba(20,138,138,0.3); color: #4ecdc4; border: 1px solid rgba(20,138,138,0.4); }
-  .badge-trap    { background: rgba(155,32,96,0.3);  color: #f48fb1; border: 1px solid rgba(155,32,96,0.4); }
-
-  /* ── CARD PREVIEW ── */
-  .card-preview { display: none; margin-top: 28px; border-top: 1px solid var(--border); padding-top: 24px; animation: fadeUp 0.3s ease; }
-  .card-preview.show { display: block; }
-  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-
-  .preview-grid { display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: start; }
-  @media (max-width: 640px) { .preview-grid { grid-template-columns: 1fr; } }
-
-  .card-image-wrap {
-    position: relative; border-radius: 10px; overflow: hidden;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.6), var(--glow-gold);
-    border: 1px solid rgba(240,192,64,0.3);
-    background: var(--purple-deep); aspect-ratio: 59/86;
-    display: flex; align-items: center; justify-content: center;
-  }
-  .card-image-wrap img { width: 100%; height: 100%; object-fit: cover; }
-  .card-image-placeholder { font-size: 48px; opacity: 0.3; }
-  .card-info { display: flex; flex-direction: column; gap: 12px; }
-  .card-name-display { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold-pale); line-height: 1.2; }
-  .card-meta-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  .meta-pill { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; border: 1px solid; }
-  .pill-type  { color: #f4a261; border-color: rgba(244,162,97,0.4); background: rgba(244,162,97,0.08); }
-  .pill-spell { color: #4ecdc4; border-color: rgba(78,205,196,0.4); background: rgba(78,205,196,0.08); }
-  .pill-trap  { color: #f48fb1; border-color: rgba(244,143,177,0.4); background: rgba(244,143,177,0.08); }
-  .pill-arch  { color: var(--purple-glow); border-color: rgba(160,30,30,0.4); background: rgba(160,30,30,0.08); }
-  .atk-def { font-family: 'Cinzel', serif; font-size: 13px; color: var(--silver); letter-spacing: 2px; }
-  .atk-def span { color: var(--gold); font-weight: 700; }
-  .card-effect-text {
-    font-size: 13.5px; color: var(--silver); line-height: 1.7; font-style: italic;
-    border-left: 2px solid rgba(160,30,30,0.4); padding-left: 12px;
-    max-height: 120px; overflow-y: auto;
-  }
-  .card-effect-text::-webkit-scrollbar { width: 4px; }
-  .card-effect-text::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .set-info { font-size: 13px; color: var(--silver-dim); }
-  .set-info strong { color: var(--silver); font-weight: 600; }
-
-  /* ── ENTRY FORM ── */
-  .entry-form { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; gap: 16px; flex-wrap: wrap; animation: fadeUp 0.3s ease; }
-  .entry-form.show { display: flex; }
-  .field-group { display: flex; flex-direction: column; gap: 6px; min-width: 120px; }
-  .field-group label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver-dim); }
-  .field-group select, .field-group input[type="number"], .field-group input[type="text"] {
-    background: rgba(12,3,3,0.8); border: 1px solid var(--border); border-radius: 8px;
-    color: var(--white); font-family: 'Crimson Pro', serif; font-size: 15px;
-    padding: 9px 12px; outline: none; transition: border-color 0.2s; width: 100%;
-  }
-  .field-group select:focus, .field-group input:focus { border-color: var(--purple-glow); }
-  .field-group select option { background: #1a0505; color: var(--white); }
-
-  .btn {
-    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 3px;
-    text-transform: uppercase; border: none; border-radius: 8px;
-    padding: 11px 24px; cursor: pointer; transition: all 0.2s; align-self: flex-end;
-  }
-  .btn-primary { background: linear-gradient(135deg, var(--purple-bright), var(--purple-glow)); color: var(--white); box-shadow: 0 4px 16px rgba(160,30,30,0.4); }
-  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(180,30,30,0.55); }
-  .btn-gold { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void); box-shadow: 0 4px 16px rgba(240,192,64,0.3); }
-  .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(240,192,64,0.4); }
-  .btn-danger { background: rgba(192,57,43,0.2); color: #e07070; border: 1px solid rgba(192,57,43,0.3); padding: 7px 14px; font-size: 10px; }
-  .btn-danger:hover { background: rgba(192,57,43,0.35); }
-
-  /* ── COLLECTION TABLE ── */
-  .collection-panel {
-    background: linear-gradient(135deg, rgba(35,5,5,0.85) 0%, rgba(13,11,20,0.9) 100%);
-    border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--glow);
-  }
-  .panel-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 20px 28px; border-bottom: 1px solid var(--border);
-    background: rgba(25,5,5,0.5); flex-wrap: wrap; gap: 12px;
-  }
-  .panel-title { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
-  .stats-row { display: flex; gap: 24px; flex-wrap: wrap; }
-  .stat-item { text-align: center; }
-  .stat-num { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold-pale); display: block; }
-  .stat-lbl { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
-
-  .table-wrap { overflow-x: auto; }
-  table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  thead th {
-    font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-    color: var(--silver-dim); padding: 12px 16px; text-align: left;
-    border-bottom: 1px solid var(--border); white-space: nowrap; background: rgba(15,3,3,0.4);
-  }
-  tbody tr { border-bottom: 1px solid rgba(180,40,40,0.1); transition: background 0.15s; }
-  tbody tr:hover { background: rgba(160,30,30,0.08); }
-  tbody tr:last-child { border-bottom: none; }
-  td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
-  td.name-cell { font-family: 'Crimson Pro', serif; font-size: 15px; font-weight: 600; color: var(--white); min-width: 160px; }
-  .type-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; flex-shrink: 0; }
-  .dot-monster { background: #f4a261; }
-  .dot-spell   { background: #4ecdc4; }
-  .dot-trap    { background: #f48fb1; }
-  td.price-cell { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); white-space: nowrap; }
-  td.qty-cell { font-family: 'Cinzel Decorative', serif; font-size: 15px; color: var(--gold-pale); text-align: center; }
-  .condition-badge { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
-  .cond-mint    { background: rgba(26,122,58,0.25);  color: #4ade80; border: 1px solid rgba(26,122,58,0.4); }
-  .cond-nm      { background: rgba(30,107,184,0.25); color: #60a5fa; border: 1px solid rgba(30,107,184,0.4); }
-  .cond-lp      { background: rgba(240,192,64,0.2);  color: #fcd34d; border: 1px solid rgba(240,192,64,0.3); }
-  .cond-mp      { background: rgba(224,123,57,0.2);  color: #fb923c; border: 1px solid rgba(224,123,57,0.3); }
-  .cond-hp      { background: rgba(192,57,43,0.2);   color: #f87171; border: 1px solid rgba(192,57,43,0.3); }
-  .cond-damaged { background: rgba(100,20,20,0.3);   color: #ef4444; border: 1px solid rgba(192,57,43,0.5); }
-
-  .empty-state { text-align: center; padding: 60px 24px; color: var(--silver-dim); }
-  .empty-state .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
-  .empty-state p { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
-
-  .export-bar {
-    padding: 16px 28px; border-top: 1px solid var(--border);
-    display: flex; justify-content: flex-end; gap: 12px; flex-wrap: wrap;
-    background: rgba(15,3,3,0.3);
-  }
-
-  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(160,30,30,0.35); border-top-color: var(--purple-glow); border-radius: 50%; animation: spin 0.7s linear infinite; margin-left: 8px; vertical-align: middle; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .status-msg { font-size: 13px; font-style: italic; color: var(--silver-dim); margin-left: 4px; }
-  .error-msg { color: #f87171; }
-
-  .toast {
-    position: fixed; bottom: 32px; right: 32px;
-    background: rgba(25,5,5,0.98); border: 1px solid var(--purple-glow);
-    border-radius: 10px; padding: 14px 20px;
-    font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold-pale);
-    box-shadow: var(--glow); transform: translateY(80px); opacity: 0;
-    transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999;
-  }
-  .toast.show { transform: translateY(0); opacity: 1; }
-
-  .rarity-secret { color: #e879f9; }
-  .rarity-ultra  { color: #fcd34d; }
-  .rarity-super  { color: #c4b5fd; }
-  .rarity-rare   { color: #93c5fd; }
-  .rarity-common { color: var(--silver-dim); }
+.coll-panel { background: linear-gradient(135deg, rgba(35,5,5,0.85), rgba(8,4,4,0.9)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--glow); }
+.panel-hdr { display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--border); background: rgba(15,3,3,0.5); flex-wrap: wrap; gap: 12px; }
+.panel-ttl { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+.stats-row { display: flex; gap: 24px; }
+.stat { text-align: center; }
+.stat-n { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold-pale); display: block; }
+.stat-l { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
+.tbl-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+thead th { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver-dim); padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; background: rgba(10,2,2,0.4); }
+tbody tr { border-bottom: 1px solid rgba(180,40,40,0.1); transition: background 0.15s; }
+tbody tr:hover { background: rgba(160,30,30,0.08); }
+tbody tr:last-child { border-bottom: none; }
+td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
+.td-nm { font-size: 15px; font-weight: 600; color: var(--white); min-width: 160px; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+.dm { background: #f4a261; }
+.ds { background: #4ecdc4; }
+.dt { background: #f48fb1; }
+.td-pr { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); white-space: nowrap; }
+.td-qt { font-family: 'Cinzel Decorative', serif; font-size: 15px; color: var(--gold-pale); text-align: center; }
+.td-sm { font-size: 12px; color: var(--silver-dim); }
+.td-atk { font-family: 'Cinzel', serif; font-size: 11px; white-space: nowrap; }
+.cb { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
+.c0 { background: rgba(26,122,58,0.25);  color: #4ade80; border: 1px solid rgba(26,122,58,0.4); }
+.c1 { background: rgba(30,107,184,0.25); color: #60a5fa; border: 1px solid rgba(30,107,184,0.4); }
+.c2 { background: rgba(240,192,64,0.2);  color: #fcd34d; border: 1px solid rgba(240,192,64,0.3); }
+.c3 { background: rgba(224,123,57,0.2);  color: #fb923c; border: 1px solid rgba(224,123,57,0.3); }
+.c4 { background: rgba(192,57,43,0.2);   color: #f87171; border: 1px solid rgba(192,57,43,0.3); }
+.c5 { background: rgba(100,20,20,0.3);   color: #ef4444; border: 1px solid rgba(192,57,43,0.5); }
+.rs { color: #e879f9; }
+.ru { color: #fcd34d; }
+.rr2 { color: #c4b5fd; }
+.rr1 { color: #93c5fd; }
+.rc { color: var(--silver-dim); }
+.rtxt { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 1px; }
+.empty-st { text-align: center; padding: 60px 24px; color: var(--silver-dim); }
+.empty-ic { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+.empty-tx { font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; }
+.exp-bar { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; background: rgba(10,2,2,0.3); }
+.spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(160,30,30,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.toast { position: fixed; bottom: 32px; right: 32px; background: rgba(20,5,5,0.98); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold-pale); box-shadow: var(--glow); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; }
+.toast.show { transform: translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
 <div class="stars"></div>
-<div class="wrapper">
+<div class="wrap">
 
   <header>
-    <div class="title-eyebrow">Live API · Cloud Sync · YGOPRODeck</div>
+    <div class="eyebrow">Live API &middot; Cloud Sync &middot; YGOPRODeck</div>
     <h1>Collection Tracker</h1>
     <p class="subtitle">Search any card. Autofill every field. Synced across every device.</p>
   </header>
 
-  <!-- SYNC STATUS -->
   <div class="sync-bar">
-    <div class="sync-indicator">
+    <div class="sync-row">
       <div class="sync-dot" id="syncDot"></div>
-      <span class="sync-label" id="syncLabel">Connecting to cloud…</span>
+      <span id="syncLabel">Connecting&hellip;</span>
     </div>
     <span style="color:var(--silver-dim);font-size:9px;letter-spacing:1px">Changes sync automatically across all devices</span>
   </div>
 
-  <!-- SEARCH PANEL -->
   <div class="search-panel">
-    <div class="section-label">Search Card Database</div>
-    <div style="margin-bottom:12px">
-      <button class="btn" style="background:rgba(160,30,30,0.3);color:#fde68a;border:1px solid rgba(160,30,30,0.5);font-size:9px;padding:6px 14px;letter-spacing:2px" onclick="testAPI()">⚡ Test API Connection</button>
-      <span id="testResult" style="font-size:13px;font-style:italic;color:var(--silver-dim);margin-left:10px"></span>
+    <div class="sec-label">Search Card Database</div>
+    <div class="test-bar">
+      <button class="btn-test" onclick="testAPI()">Test API Connection</button>
+      <span id="testResult"></span>
     </div>
     <div class="search-row">
       <div class="search-wrap">
-        <input type="text" id="cardSearch" placeholder="Type a card name — e.g. Dark Magician, Ash Blossom…" autocomplete="off">
-        <div class="autocomplete-list" id="acList"></div>
+        <input type="text" id="cardSearch" placeholder="Type a card name &mdash; e.g. Dark Magician, Ash Blossom&hellip;" autocomplete="off">
+        <div class="ac-list" id="acList"></div>
       </div>
       <span class="status-msg" id="statusMsg"></span>
     </div>
 
-    <!-- CARD PREVIEW -->
     <div class="card-preview" id="cardPreview">
       <div class="preview-grid">
-        <div class="card-image-wrap" id="cardImgWrap">
-          <div class="card-image-placeholder">🃏</div>
-        </div>
+        <div class="img-wrap" id="cardImgWrap"><div class="img-ph">&#x1F0A3;</div></div>
         <div class="card-info">
-          <div class="card-name-display" id="previewName">—</div>
-          <div class="card-meta-row" id="previewMeta"></div>
-          <div class="atk-def" id="previewAtkDef" style="display:none"></div>
-          <div class="card-effect-text" id="previewEffect">—</div>
-          <div class="set-info" id="previewSet">—</div>
+          <div class="card-name" id="previewName"></div>
+          <div class="card-meta" id="previewMeta"></div>
+          <div class="atk-def" id="previewAtkDef"></div>
+          <div class="card-eff" id="previewEffect"></div>
+          <div class="card-set" id="previewSet"></div>
         </div>
       </div>
-
       <div class="entry-form" id="entryForm">
-        <div class="field-group">
-          <label>Quantity</label>
-          <input type="number" id="fQty" value="1" min="1" max="99" style="width:80px">
-        </div>
-        <div class="field-group">
-          <label>Rarity</label>
+        <div class="field"><label>Quantity</label><input type="number" id="fQty" value="1" min="1" max="99" style="width:80px"></div>
+        <div class="field"><label>Rarity</label>
           <select id="fRarity">
             <option>Common</option><option>Rare</option><option>Super Rare</option>
-            <option>Ultra Rare</option><option>Secret Rare</option>
-            <option>Prismatic Secret Rare</option><option>Ghost Rare</option>
-            <option>Starlight Rare</option><option>Quarter Century Secret Rare</option>
+            <option>Ultra Rare</option><option>Secret Rare</option><option>Prismatic Secret Rare</option>
+            <option>Ghost Rare</option><option>Starlight Rare</option><option>Quarter Century Secret Rare</option>
           </select>
         </div>
-        <div class="field-group">
-          <label>Condition</label>
+        <div class="field"><label>Condition</label>
           <select id="fCondition">
-            <option>Mint</option><option selected>Near Mint</option>
-            <option>Lightly Played</option><option>Moderately Played</option>
-            <option>Heavily Played</option><option>Damaged</option>
+            <option>Mint</option><option selected>Near Mint</option><option>Lightly Played</option>
+            <option>Moderately Played</option><option>Heavily Played</option><option>Damaged</option>
           </select>
         </div>
-        <div class="field-group">
-          <label>Edition</label>
-          <select id="fEdition">
-            <option>Unlimited</option><option>1st Edition</option><option>Limited Edition</option>
-          </select>
+        <div class="field"><label>Edition</label>
+          <select id="fEdition"><option>Unlimited</option><option>1st Edition</option><option>Limited Edition</option></select>
         </div>
-        <div class="field-group" style="min-width:110px">
-          <label>Market Price ($)</label>
-          <input type="number" id="fPrice" min="0" step="0.01" placeholder="0.00">
-        </div>
-        <div class="field-group">
-          <label>Notes / Deck</label>
-          <input type="text" id="fNotes" placeholder="e.g. Main deck" style="min-width:160px">
-        </div>
-        <button class="btn btn-primary" onclick="addToCollection()">＋ Add Card</button>
+        <div class="field"><label>Market Price ($)</label><input type="number" id="fPrice" min="0" step="0.01" placeholder="0.00" style="width:120px"></div>
+        <div class="field"><label>Notes / Deck</label><input type="text" id="fNotes" placeholder="e.g. Main deck" style="min-width:160px"></div>
+        <button class="btn btn-add" onclick="addToCollection()">+ Add Card</button>
       </div>
     </div>
   </div>
 
-  <!-- COLLECTION TABLE -->
-  <div class="collection-panel">
-    <div class="panel-header">
-      <div class="panel-title">⚔ My Collection</div>
+  <div class="coll-panel">
+    <div class="panel-hdr">
+      <div class="panel-ttl">My Collection</div>
       <div class="stats-row">
-        <div class="stat-item"><span class="stat-num" id="statUnique">0</span><span class="stat-lbl">Unique</span></div>
-        <div class="stat-item"><span class="stat-num" id="statTotal">0</span><span class="stat-lbl">Total Cards</span></div>
-        <div class="stat-item"><span class="stat-num" id="statValue">$0</span><span class="stat-lbl">Est. Value</span></div>
+        <div class="stat"><span class="stat-n" id="statUnique">0</span><span class="stat-l">Unique</span></div>
+        <div class="stat"><span class="stat-n" id="statTotal">0</span><span class="stat-l">Total Cards</span></div>
+        <div class="stat"><span class="stat-n" id="statValue">$0</span><span class="stat-l">Est. Value</span></div>
       </div>
     </div>
-    <div class="table-wrap">
+    <div class="tbl-wrap">
       <table>
-        <thead>
-          <tr>
-            <th>Card Name</th><th>Type</th><th>Archetype</th><th>ATK / DEF</th>
-            <th>Set</th><th>Rarity</th><th>Condition</th><th>Edition</th>
-            <th>Qty</th><th>Price</th><th>Total</th><th>Notes</th><th></th>
-          </tr>
-        </thead>
-        <tbody id="collectionBody">
-          <tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⚔</div><p>Loading your collection…</p></div></td></tr>
+        <thead><tr>
+          <th>Card Name</th><th>Type</th><th>Archetype</th><th>ATK/DEF</th>
+          <th>Set</th><th>Rarity</th><th>Condition</th><th>Edition</th>
+          <th>Qty</th><th>Price</th><th>Total</th><th>Notes</th><th></th>
+        </tr></thead>
+        <tbody id="collBody">
+          <tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
         </tbody>
       </table>
     </div>
-    <div class="export-bar">
-      <button class="btn btn-gold" onclick="exportCSV()">↓ Export CSV for Excel</button>
+    <div class="exp-bar">
+      <button class="btn btn-gold" onclick="exportCSV()">&#8595; Export CSV for Excel</button>
     </div>
   </div>
 
 </div>
 <div class="toast" id="toast"></div>
 
-
-<!-- Firebase compat SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
 <script>
-// Wait for Firebase compat SDKs to be ready
 document.addEventListener('DOMContentLoaded', function() {
 
-  // ── Firebase init ──────────────────────────────────────────────────────────
-  const firebaseConfig = {
+  // Firebase init
+  firebase.initializeApp({
     apiKey: "AIzaSyCbb51QGCVq7N_cmTifYYJb8Eb_YiqkVg4",
     authDomain: "ygo-collection-4c76d.firebaseapp.com",
     projectId: "ygo-collection-4c76d",
     storageBucket: "ygo-collection-4c76d.firebasestorage.app",
     messagingSenderId: "725120094141",
     appId: "1:725120094141:web:ba9d638ce4c1a20d04ccd4"
-  };
+  });
+  var db = firebase.firestore();
+  var col = db.collection('cards');
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-  const cardsCol = db.collection('cards');
+  var selCard = null;
+  var cards = [];
+  var timer = null;
+  var acIdx = -1;
 
-  // ── State ──────────────────────────────────────────────────────────────────
-  let selectedCard = null;
-  let collection_data = [];
-  let acTimer = null;
-  let acIndex = -1;
+  var inp = document.getElementById('cardSearch');
+  var acList = document.getElementById('acList');
+  var statusEl = document.getElementById('statusMsg');
 
-  // ── DOM ────────────────────────────────────────────────────────────────────
-  const searchInput = document.getElementById('cardSearch');
-  const acList      = document.getElementById('acList');
-  const statusMsg   = document.getElementById('statusMsg');
-  const cardPreview = document.getElementById('cardPreview');
-  const entryForm   = document.getElementById('entryForm');
-
-  // ── Sync indicator ─────────────────────────────────────────────────────────
-  function setSyncState(state, msg) {
-    const dot   = document.getElementById('syncDot');
-    const label = document.getElementById('syncLabel');
-    dot.className   = 'sync-dot ' + state;
-    label.className = 'sync-label ' + state;
-    label.textContent = msg;
+  // Sync state
+  function sync(state, msg) {
+    var dot = document.getElementById('syncDot');
+    var lbl = document.getElementById('syncLabel');
+    dot.className = 'sync-dot ' + state;
+    lbl.className = state;
+    lbl.textContent = msg;
   }
 
-  // ── Real-time Firestore listener ───────────────────────────────────────────
-  setSyncState('syncing', 'Connecting…');
-  try {
-    cardsCol.orderBy('addedAt', 'asc').onSnapshot(
-      (snapshot) => {
-        collection_data = snapshot.docs.map(d => ({ firestoreId: d.id, ...d.data() }));
-        renderTable();
-        setSyncState('synced', 'Synced · ' + new Date().toLocaleTimeString());
-      },
-      (err) => {
-        console.error('Firestore error:', err);
-        setSyncState('error', 'Firestore error: ' + err.code);
-        renderTable();
-      }
-    );
-  } catch(e) {
-    console.error('Firebase init error:', e);
-    setSyncState('error', 'Firebase failed: ' + e.message);
+  // Firestore listener
+  sync('syncing', 'Connecting...');
+  col.orderBy('addedAt','asc').onSnapshot(function(snap) {
+    cards = snap.docs.map(function(d) { var o = d.data(); o.fid = d.id; return o; });
     renderTable();
-  }
-
-  // ── Autocomplete ───────────────────────────────────────────────────────────
-  searchInput.addEventListener('input', () => {
-    const q = searchInput.value.trim();
-    clearTimeout(acTimer);
-    if (q.length < 4) { hideAc(); return; }
-    acTimer = setTimeout(() => fetchSuggestions(q), 700);
+    sync('synced', 'Synced ' + new Date().toLocaleTimeString());
+  }, function(err) {
+    sync('error', 'Error: ' + err.code);
+    renderTable();
   });
 
-  searchInput.addEventListener('keydown', e => {
-    const items = acList.querySelectorAll('.autocomplete-item');
-    if (e.key === 'ArrowDown')      { acIndex = Math.min(acIndex+1, items.length-1); highlightAc(items); e.preventDefault(); }
-    else if (e.key === 'ArrowUp')   { acIndex = Math.max(acIndex-1, 0); highlightAc(items); e.preventDefault(); }
-    else if (e.key === 'Enter' && acIndex >= 0 && items[acIndex]) { items[acIndex].click(); e.preventDefault(); }
-    else if (e.key === 'Escape')    hideAc();
+  // Search input
+  inp.addEventListener('input', function() {
+    clearTimeout(timer);
+    var q = inp.value.trim();
+    if (q.length < 4) { closeAc(); return; }
+    timer = setTimeout(function() { doSearch(q); }, 700);
   });
 
-  document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) hideAc(); });
+  inp.addEventListener('keydown', function(e) {
+    var items = acList.querySelectorAll('.ac-item');
+    if (e.key === 'ArrowDown') { acIdx = Math.min(acIdx+1, items.length-1); hiAc(items); e.preventDefault(); }
+    else if (e.key === 'ArrowUp') { acIdx = Math.max(acIdx-1, 0); hiAc(items); e.preventDefault(); }
+    else if (e.key === 'Enter' && acIdx >= 0 && items[acIdx]) { items[acIdx].click(); e.preventDefault(); }
+    else if (e.key === 'Escape') closeAc();
+  });
 
-  async function fetchSuggestions(q) {
-    setStatus('searching');
-    try {
-      const sanitized = q.replace(/[^a-zA-Z0-9 '\-]/g, '').trim();
-      if (sanitized.length < 4) { hideAc(); setStatus('none'); return; }
-      const params = new URLSearchParams({ fname: sanitized, num: '10', offset: '0' });
-      const url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?' + params;
-      const res = await fetch(url);
-      if (res.status === 400) { hideAc(); setStatus('none'); return; }
-      if (!res.ok) { hideAc(); setStatus('error'); return; }
-      const data = await res.json();
-      if (data.error || !data.data || data.data.length === 0) { hideAc(); setStatus('none'); return; }
-      showAc(data.data.slice(0, 10));
-      setStatus('idle');
-    } catch(err) {
-      console.error('Fetch error:', err.message);
-      setStatus('error'); hideAc();
-    }
+  document.addEventListener('click', function(e) { if (!e.target.closest('.search-wrap')) closeAc(); });
+
+  function doSearch(q) {
+    var clean = q.replace(/[^a-zA-Z0-9 '\-]/g,'').trim();
+    if (clean.length < 4) return;
+    statusEl.innerHTML = '<span class="spinner"></span>';
+    var url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=' + encodeURIComponent(clean) + '&num=10&offset=0';
+    fetch(url)
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        statusEl.textContent = '';
+        if (!data || data.error || !data.data || !data.data.length) { closeAc(); statusEl.textContent = 'No cards found'; return; }
+        openAc(data.data.slice(0,10));
+      })
+      .catch(function() { statusEl.textContent = 'API error'; closeAc(); });
   }
 
-  function showAc(cards) {
-    acIndex = -1; acList.innerHTML = '';
-    cards.forEach(card => {
-      const item = document.createElement('div');
-      item.className = 'autocomplete-item';
-      const tl = getTypeLabel(card.type);
-      item.innerHTML = '<span>' + escHtml(card.name) + '</span><span class="ac-type-badge ' + tl.cls + '">' + tl.text + '</span>';
-      item.addEventListener('click', () => selectCard(card));
+  function openAc(results) {
+    acIdx = -1; acList.innerHTML = '';
+    results.forEach(function(card) {
+      var item = document.createElement('div');
+      item.className = 'ac-item';
+      var tl = tLabel(card.type);
+      item.innerHTML = '<span>' + esc(card.name) + '</span><span class="tbadge ' + tl.c + '">' + tl.t + '</span>';
+      item.addEventListener('click', function() { pickCard(card); });
       acList.appendChild(item);
     });
-    acList.classList.add('show');
+    acList.classList.add('open');
   }
 
-  function highlightAc(items) {
-    items.forEach((it,i) => it.classList.toggle('active', i === acIndex));
-    if (items[acIndex]) items[acIndex].scrollIntoView({block:'nearest'});
+  function hiAc(items) {
+    items.forEach(function(it,i) { it.classList.toggle('hi', i===acIdx); });
+    if (items[acIdx]) items[acIdx].scrollIntoView({block:'nearest'});
   }
 
-  function hideAc() { acList.classList.remove('show'); acList.innerHTML = ''; acIndex = -1; }
+  function closeAc() { acList.classList.remove('open'); acList.innerHTML = ''; acIdx = -1; }
 
-  // ── Select Card ────────────────────────────────────────────────────────────
-  function selectCard(card) {
-    selectedCard = card;
-    searchInput.value = card.name;
-    hideAc(); setStatus('idle');
-    renderPreview(card);
+  function pickCard(card) {
+    selCard = card;
+    inp.value = card.name;
+    closeAc();
+    statusEl.textContent = '';
+    showPreview(card);
   }
 
-  function renderPreview(card) {
-    cardPreview.classList.add('show');
-    entryForm.classList.add('show');
+  function showPreview(card) {
+    document.getElementById('cardPreview').classList.add('open');
+    document.getElementById('entryForm').classList.add('open');
     document.getElementById('previewName').textContent = card.name;
-    const meta = document.getElementById('previewMeta');
-    const tl = getTypeLabel(card.type);
-    meta.innerHTML = '<span class="meta-pill ' + (tl.cls === 'badge-spell' ? 'pill-spell' : tl.cls === 'badge-trap' ? 'pill-trap' : 'pill-type') + '">' + escHtml(card.type) + '</span>';
-    if (card.archetype) meta.innerHTML += '<span class="meta-pill pill-arch">' + escHtml(card.archetype) + '</span>';
-    const atkDef = document.getElementById('previewAtkDef');
+
+    var tl = tLabel(card.type);
+    var pc = tl.c === 'bs' ? 'ps' : tl.c === 'bt' ? 'pt' : 'pm';
+    var mh = '<span class="mpill ' + pc + '">' + esc(card.type) + '</span>';
+    if (card.archetype) mh += '<span class="mpill pa">' + esc(card.archetype) + '</span>';
+    document.getElementById('previewMeta').innerHTML = mh;
+
+    var ad = document.getElementById('previewAtkDef');
     if (card.atk !== undefined) {
-      atkDef.style.display = '';
-      atkDef.innerHTML = 'ATK <span>' + (card.atk === -1 ? '?' : card.atk) + '</span> / DEF <span>' + (card.def === -1 ? '?' : (card.def !== undefined ? card.def : '?')) + '</span>';
-    } else { atkDef.style.display = 'none'; }
-    document.getElementById('previewEffect').textContent = card.desc || '—';
-    const setEl = document.getElementById('previewSet');
-    if (card.card_sets && card.card_sets.length > 0) {
-      const s = card.card_sets[0];
-      setEl.innerHTML = '<strong>' + escHtml(s.set_name) + '</strong> · ' + escHtml(s.set_code) + ' · ' + escHtml(s.set_rarity);
-      const rSelect = document.getElementById('fRarity');
-      const rarOpt = Array.from(rSelect.options).find(o => o.value === s.set_rarity);
-      if (rarOpt) rSelect.value = s.set_rarity;
-    } else { setEl.textContent = 'No set information available'; }
-    const imgWrap = document.getElementById('cardImgWrap');
-    if (card.card_images && card.card_images.length > 0) {
-      var img = document.createElement('img'); img.src = 'https://images.ygoprodeck.com/images/cards_small/' + card.card_images[0].id + '.jpg'; img.alt = card.name; img.onerror = function(){ imgWrap.innerHTML = '<div class="card-image-placeholder">&#x1F0A3;</div>'; }; imgWrap.innerHTML = ''; imgWrap.appendChild(img);
-    } else { imgWrap.innerHTML = '<div class="card-image-placeholder">🃏</div>'; }
+      ad.innerHTML = 'ATK <b>' + (card.atk===-1?'?':card.atk) + '</b> / DEF <b>' + (card.def===undefined?'?':card.def===-1?'?':card.def) + '</b>';
+    } else { ad.innerHTML = ''; }
+
+    document.getElementById('previewEffect').textContent = card.desc || '';
+
+    var se = document.getElementById('previewSet');
+    if (card.card_sets && card.card_sets.length) {
+      var s = card.card_sets[0];
+      se.innerHTML = '<strong>' + esc(s.set_name) + '</strong> &middot; ' + esc(s.set_code) + ' &middot; ' + esc(s.set_rarity);
+      var opts = document.getElementById('fRarity').options;
+      for (var i=0; i<opts.length; i++) { if (opts[i].value===s.set_rarity) { document.getElementById('fRarity').selectedIndex=i; break; } }
+    } else { se.textContent = 'No set info'; }
+
+    var wrap = document.getElementById('cardImgWrap');
+    if (card.card_images && card.card_images.length) {
+      var img = document.createElement('img');
+      img.src = 'https://images.ygoprodeck.com/images/cards_small/' + card.card_images[0].id + '.jpg';
+      img.alt = card.name;
+      img.onerror = function() { wrap.innerHTML = '<div class="img-ph">&#x1F0A3;</div>'; };
+      wrap.innerHTML = '';
+      wrap.appendChild(img);
+    } else { wrap.innerHTML = '<div class="img-ph">&#x1F0A3;</div>'; }
   }
 
-  // ── Add to Firestore ───────────────────────────────────────────────────────
-  window.addToCollection = async function() {
-    if (!selectedCard) return;
-    const card = selectedCard;
-    const sets = card.card_sets || [];
-    const firstSet = sets[0] || {};
-    setSyncState('syncing', 'Saving…');
-    try {
-      await cardsCol.add({
-        name:      card.name,
-        type:      card.type,
-        archetype: card.archetype || '—',
-        atk:       card.atk !== undefined ? (card.atk === -1 ? '?' : card.atk) : '—',
-        def:       card.def !== undefined ? (card.def === -1 ? '?' : card.def) : '—',
-        setName:   firstSet.set_name || '—',
-        setCode:   firstSet.set_code || '—',
-        rarity:    document.getElementById('fRarity').value,
-        condition: document.getElementById('fCondition').value,
-        edition:   document.getElementById('fEdition').value,
-        qty:       parseInt(document.getElementById('fQty').value) || 1,
-        price:     parseFloat(document.getElementById('fPrice').value) || 0,
-        notes:     document.getElementById('fNotes').value,
-        addedAt:   Date.now(),
-      });
-      showToast(card.name + ' added & synced');
+  // Add card
+  window.addToCollection = function() {
+    if (!selCard) return;
+    var c = selCard;
+    var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
+    sync('syncing','Saving...');
+    col.add({
+      name: c.name, type: c.type, archetype: c.archetype||'—',
+      atk: c.atk!==undefined ? (c.atk===-1?'?':String(c.atk)) : '—',
+      def: c.def!==undefined ? (c.def===-1?'?':String(c.def)) : '—',
+      setName: fs.set_name||'—', setCode: fs.set_code||'—',
+      rarity: document.getElementById('fRarity').value,
+      condition: document.getElementById('fCondition').value,
+      edition: document.getElementById('fEdition').value,
+      qty: parseInt(document.getElementById('fQty').value)||1,
+      price: parseFloat(document.getElementById('fPrice').value)||0,
+      notes: document.getElementById('fNotes').value,
+      addedAt: Date.now()
+    }).then(function() {
+      toast(c.name + ' added!');
       document.getElementById('fQty').value = 1;
       document.getElementById('fPrice').value = '';
       document.getElementById('fNotes').value = '';
-    } catch(err) {
-      console.error(err);
-      setSyncState('error', 'Save failed: ' + err.message);
-      showToast('Save failed. Check Firestore rules.');
-    }
+    }).catch(function(e) { sync('error','Save failed'); toast('Save failed: ' + e.message); });
   };
 
-  // ── Remove from Firestore ──────────────────────────────────────────────────
-  window.removeEntry = async function(firestoreId) {
-    setSyncState('syncing', 'Removing…');
-    try {
-      await db.collection('cards').doc(firestoreId).delete();
-      showToast('Card removed');
-    } catch(err) {
-      console.error(err);
-      setSyncState('error', 'Delete failed');
-    }
+  // Remove card
+  window.removeEntry = function(id) {
+    sync('syncing','Removing...');
+    db.collection('cards').doc(id).delete().catch(function(e) { sync('error','Delete failed'); });
   };
 
-  // ── Render Table ───────────────────────────────────────────────────────────
+  // Render table
   function renderTable() {
-    const tbody = document.getElementById('collectionBody');
-    if (collection_data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="13"><div class="empty-state"><div class="empty-icon">⚔</div><p>Your collection awaits — search a card above to begin</p></div></td></tr>';
+    var tbody = document.getElementById('collBody');
+    if (!cards.length) {
+      tbody.innerHTML = '<tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
       updateStats(); return;
     }
-    tbody.innerHTML = collection_data.map(e => {
-      const tl = getTypeLabel(e.type);
-      const dotCls = tl.cls === 'badge-spell' ? 'dot-spell' : tl.cls === 'badge-trap' ? 'dot-trap' : 'dot-monster';
-      const total = e.qty * e.price;
-      return '<tr>' +
-        '<td class="name-cell"><span class="type-dot ' + dotCls + '"></span>' + escHtml(e.name) + '</td>' +
-        '<td style="font-size:12px;color:var(--silver-dim)">' + escHtml(e.type) + '</td>' +
-        '<td style="font-size:12px">' + escHtml(e.archetype) + '</td>' +
-        '<td style="font-family:'Cinzel',serif;font-size:11px;white-space:nowrap">' + (e.atk !== '—' ? e.atk + ' / ' + e.def : '—') + '</td>' +
-        '<td style="font-size:12px">' + escHtml(e.setName) + '<br><span style="color:var(--silver-dim);font-size:11px">' + escHtml(e.setCode) + '</span></td>' +
-        '<td class="' + rarityClass(e.rarity) + '" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px">' + escHtml(e.rarity) + '</td>' +
-        '<td><span class="condition-badge ' + conditionClass(e.condition) + '">' + escHtml(e.condition) + '</span></td>' +
-        '<td style="font-size:12px;color:var(--silver-dim)">' + escHtml(e.edition) + '</td>' +
-        '<td class="qty-cell">' + e.qty + '</td>' +
-        '<td class="price-cell">' + (e.price ? '$' + Number(e.price).toFixed(2) : '—') + '</td>' +
-        '<td class="price-cell">' + (total ? '$' + total.toFixed(2) : '—') + '</td>' +
-        '<td style="font-size:12px;color:var(--silver-dim);max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + escHtml(e.notes) + '</td>' +
-        '<td><button class="btn btn-danger" onclick="removeEntry('' + e.firestoreId + '')">✕</button></td>' +
-        '</tr>';
-    }).join('');
+    var h = '';
+    cards.forEach(function(e) {
+      var tl = tLabel(e.type);
+      var dc = tl.c==='bs'?'ds':tl.c==='bt'?'dt':'dm';
+      var tot = (e.qty||0)*(e.price||0);
+      h += '<tr>';
+      h += '<td class="td-nm"><span class="dot ' + dc + '"></span>' + esc(e.name) + '</td>';
+      h += '<td class="td-sm">' + esc(e.type) + '</td>';
+      h += '<td class="td-sm">' + esc(e.archetype) + '</td>';
+      h += '<td class="td-atk">' + (e.atk!=='—' ? e.atk+' / '+e.def : '—') + '</td>';
+      h += '<td class="td-sm">' + esc(e.setName) + '<br><small>' + esc(e.setCode) + '</small></td>';
+      h += '<td class="rtxt ' + rClass(e.rarity) + '">' + esc(e.rarity) + '</td>';
+      h += '<td><span class="cb ' + cClass(e.condition) + '">' + esc(e.condition) + '</span></td>';
+      h += '<td class="td-sm">' + esc(e.edition) + '</td>';
+      h += '<td class="td-qt">' + (e.qty||0) + '</td>';
+      h += '<td class="td-pr">' + (e.price ? '$'+Number(e.price).toFixed(2) : '—') + '</td>';
+      h += '<td class="td-pr">' + (tot ? '$'+tot.toFixed(2) : '—') + '</td>';
+      h += '<td class="td-sm" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(e.notes) + '</td>';
+      h += '<td><button class="btn-del" onclick="removeEntry(\'' + e.fid + '\')">X</button></td>';
+      h += '</tr>';
+    });
+    tbody.innerHTML = h;
     updateStats();
   }
 
   function updateStats() {
-    document.getElementById('statUnique').textContent = collection_data.length;
-    document.getElementById('statTotal').textContent  = collection_data.reduce((s,e) => s + e.qty, 0);
-    const val = collection_data.reduce((s,e) => s + (e.qty * e.price), 0);
-    document.getElementById('statValue').textContent  = '$' + val.toFixed(2);
+    document.getElementById('statUnique').textContent = cards.length;
+    document.getElementById('statTotal').textContent = cards.reduce(function(s,e){return s+(e.qty||0);},0);
+    var v = cards.reduce(function(s,e){return s+(e.qty||0)*(e.price||0);},0);
+    document.getElementById('statValue').textContent = '$'+v.toFixed(2);
   }
 
-  // ── Export CSV ─────────────────────────────────────────────────────────────
+  // Export
   window.exportCSV = function() {
-    if (collection_data.length === 0) { showToast('Nothing to export yet!'); return; }
-    const headers = ['Card Name','Card Type','Archetype','ATK','DEF','Set Name','Set Code','Rarity','Edition','Condition','Qty Owned','Market Price ($)','Total Value ($)','Notes / Deck'];
-    const rows = collection_data.map(e =>
-      [e.name,e.type,e.archetype,e.atk,e.def,e.setName,e.setCode,e.rarity,e.edition,e.condition,e.qty,e.price,(e.qty*e.price).toFixed(2),e.notes]
-      .map(v => '"' + String(v||'').replace(/"/g,'""') + '"').join(',')
-    );
-    const csv = [headers.join(','),...rows].join('\r\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+    if (!cards.length) { toast('Nothing to export!'); return; }
+    var h = ['Card Name','Type','Archetype','ATK','DEF','Set Name','Set Code','Rarity','Edition','Condition','Qty','Price','Total','Notes'].join(',');
+    var rows = cards.map(function(e) {
+      return [e.name,e.type,e.archetype,e.atk,e.def,e.setName,e.setCode,e.rarity,e.edition,e.condition,e.qty,e.price,((e.qty||0)*(e.price||0)).toFixed(2),e.notes]
+        .map(function(v){return '"'+String(v||'').replace(/"/g,'""')+'"';}).join(',');
+    });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([[h].concat(rows).join('\r\n')],{type:'text/csv'}));
     a.download = 'yugioh_collection.csv'; a.click();
-    showToast('CSV exported!');
+    toast('CSV exported!');
   };
 
-  // ── Test API ───────────────────────────────────────────────────────────────
-  window.testAPI = async function() {
-    const el = document.getElementById('testResult');
-    el.textContent = 'Testing…';
+  // Test API
+  window.testAPI = function() {
+    var el = document.getElementById('testResult');
+    el.textContent = 'Testing...';
     el.style.color = 'var(--gold)';
-    try {
-      const res = await fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=Dark+Magician&num=2&offset=0');
-      if (res.ok) {
-        const data = await res.json();
-        if (data.data && data.data.length > 0) {
-          el.textContent = '✓ API connected — ' + data.data.length + ' results';
-          el.style.color = '#4ade80';
-        } else {
-          el.textContent = '⚠ No data returned';
-          el.style.color = '#fcd34d';
-        }
-      } else {
-        el.textContent = '✗ HTTP ' + res.status;
-        el.style.color = '#f87171';
-      }
-    } catch(e) {
-      el.textContent = '✗ ' + e.message;
-      el.style.color = '#f87171';
-    }
+    fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?fname=Dark+Magician&num=2&offset=0')
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if (d.data && d.data.length) { el.textContent = 'Connected! Got '+d.data.length+' results.'; el.style.color='#4ade80'; }
+        else { el.textContent = 'No data returned.'; el.style.color='#fcd34d'; }
+      })
+      .catch(function(e){ el.textContent = 'Error: '+e.message; el.style.color='#f87171'; });
   };
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
-  function getTypeLabel(type) {
-    if (!type) return { text:'Unknown', cls:'badge-monster' };
-    const t = type.toLowerCase();
-    if (t.includes('spell')) return { text:'Spell', cls:'badge-spell' };
-    if (t.includes('trap'))  return { text:'Trap',  cls:'badge-trap' };
-    return { text:'Monster', cls:'badge-monster' };
+  // Helpers
+  function tLabel(type) {
+    if (!type) return {t:'Unknown',c:'bm'};
+    var t = type.toLowerCase();
+    if (t.indexOf('spell')!==-1) return {t:'Spell',c:'bs'};
+    if (t.indexOf('trap')!==-1)  return {t:'Trap',c:'bt'};
+    return {t:'Monster',c:'bm'};
   }
 
-  function conditionClass(c) {
-    return {'Mint':'cond-mint','Near Mint':'cond-nm','Lightly Played':'cond-lp','Moderately Played':'cond-mp','Heavily Played':'cond-hp','Damaged':'cond-damaged'}[c]||'cond-nm';
+  function cClass(c) {
+    return {'Mint':'c0','Near Mint':'c1','Lightly Played':'c2','Moderately Played':'c3','Heavily Played':'c4','Damaged':'c5'}[c]||'c1';
   }
 
-  function rarityClass(r) {
-    if (!r) return 'rarity-common';
-    const rl = r.toLowerCase();
-    if (rl.includes('secret')||rl.includes('starlight')||rl.includes('ghost')||rl.includes('quarter')) return 'rarity-secret';
-    if (rl.includes('ultra'))  return 'rarity-ultra';
-    if (rl.includes('super'))  return 'rarity-super';
-    if (rl === 'rare')         return 'rarity-rare';
-    return 'rarity-common';
+  function rClass(r) {
+    if (!r) return 'rc';
+    var rl = r.toLowerCase();
+    if (rl.indexOf('secret')!==-1||rl.indexOf('starlight')!==-1||rl.indexOf('ghost')!==-1||rl.indexOf('quarter')!==-1) return 'rs';
+    if (rl.indexOf('ultra')!==-1) return 'ru';
+    if (rl.indexOf('super')!==-1) return 'rr2';
+    if (rl==='rare') return 'rr1';
+    return 'rc';
   }
 
-  function setStatus(state) {
-    if (state==='searching') { statusMsg.innerHTML='<span class="spinner"></span>'; statusMsg.className='status-msg'; }
-    else if (state==='error') { statusMsg.textContent='API error'; statusMsg.className='status-msg error-msg'; }
-    else if (state==='none')  { statusMsg.textContent='No cards found'; statusMsg.className='status-msg'; }
-    else { statusMsg.textContent=''; }
-  }
-
-  function showToast(msg) {
-    const t = document.getElementById('toast');
+  function toast(msg) {
+    var t = document.getElementById('toast');
     t.textContent = msg; t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2800);
+    setTimeout(function(){t.classList.remove('show');}, 2800);
   }
 
-  function escHtml(str) {
-    return String(str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-}); // end DOMContentLoaded
+});
 </script>
 </body>
+</html>
