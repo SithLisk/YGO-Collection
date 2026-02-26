@@ -165,6 +165,11 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
 .exp-bar { padding: 16px 28px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; background: rgba(10,2,2,0.3); }
 .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(160,30,30,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; }
 @keyframes spin { to { transform: rotate(360deg); } }
+.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.sortable:hover { color: var(--gold-pale); }
+.sort-icon { font-size: 8px; margin-left: 4px; opacity: 0.5; }
+.sort-icon.asc::after  { content: ' ▲'; opacity: 1; color: var(--gold); }
+.sort-icon.desc::after { content: ' ▼'; opacity: 1; color: var(--gold); }
 .toast { position: fixed; bottom: 32px; right: 32px; background: rgba(20,5,5,0.98); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold-pale); box-shadow: var(--glow); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; }
 .toast.show { transform: translateY(0); opacity: 1; }
 </style>
@@ -264,10 +269,20 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
     </div>
     <div class="tbl-wrap">
       <table>
-        <thead><tr>
-          <th>Card Name</th><th>Type</th><th>Archetype</th><th>ATK/DEF</th>
-          <th>Set</th><th>Rarity</th><th>Condition</th><th>Edition</th>
-          <th>Qty</th><th>Price</th><th>Total</th><th>Notes</th><th></th>
+        <thead><tr id="tableHeaders">
+          <th onclick="sortBy('name')"    class="sortable">Card Name <span class="sort-icon" id="si-name"></span></th>
+          <th onclick="sortBy('type')"    class="sortable">Type <span class="sort-icon" id="si-type"></span></th>
+          <th onclick="sortBy('archetype')" class="sortable">Archetype <span class="sort-icon" id="si-archetype"></span></th>
+          <th onclick="sortBy('atk')"     class="sortable">ATK/DEF <span class="sort-icon" id="si-atk"></span></th>
+          <th onclick="sortBy('setName')" class="sortable">Set <span class="sort-icon" id="si-setName"></span></th>
+          <th onclick="sortBy('rarity')"  class="sortable">Rarity <span class="sort-icon" id="si-rarity"></span></th>
+          <th onclick="sortBy('condition')" class="sortable">Condition <span class="sort-icon" id="si-condition"></span></th>
+          <th onclick="sortBy('edition')" class="sortable">Edition <span class="sort-icon" id="si-edition"></span></th>
+          <th onclick="sortBy('qty')"     class="sortable">Qty <span class="sort-icon" id="si-qty"></span></th>
+          <th onclick="sortBy('price')"   class="sortable">Price <span class="sort-icon" id="si-price"></span></th>
+          <th onclick="sortBy('total')"   class="sortable">Total <span class="sort-icon" id="si-total"></span></th>
+          <th onclick="sortBy('notes')"   class="sortable">Notes <span class="sort-icon" id="si-notes"></span></th>
+          <th></th>
         </tr></thead>
         <tbody id="collBody">
           <tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
@@ -510,6 +525,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Auth state
   var PW_HASH = '663dc2bedc7eb3349bc80bff0c508111936a2a0d18269353a7ef7020ae24cc18';
   var authed = false;
+  var sortCol = null;
+  var sortDir = 1; // 1 = asc, -1 = desc
 
   function sha256(str) {
     // Use SubtleCrypto to hash the password
@@ -607,6 +624,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
+  // Sort
+  window.sortBy = function(col) {
+    if (sortCol === col) {
+      sortDir *= -1;
+    } else {
+      sortCol = col;
+      sortDir = 1;
+    }
+    // Update sort icons
+    document.querySelectorAll('.sort-icon').forEach(function(el) { el.className = 'sort-icon'; });
+    var icon = document.getElementById('si-' + col);
+    if (icon) icon.className = 'sort-icon ' + (sortDir === 1 ? 'asc' : 'desc');
+    renderTable();
+  };
+
+  function getSortValue(e, col) {
+    if (col === 'total') return (e.qty || 0) * (e.price || 0);
+    if (col === 'qty')   return e.qty || 0;
+    if (col === 'price') return e.price || 0;
+    if (col === 'atk')   return isNaN(Number(e.atk)) ? -1 : Number(e.atk);
+    return String(e[col] || '').toLowerCase();
+  }
+
+  function sortedCards() {
+    if (!sortCol) return cards;
+    return cards.slice().sort(function(a, b) {
+      var av = getSortValue(a, sortCol);
+      var bv = getSortValue(b, sortCol);
+      if (av < bv) return -1 * sortDir;
+      if (av > bv) return  1 * sortDir;
+      return 0;
+    });
+  }
+
   // Render table
   function renderTable() {
     var tbody = document.getElementById('collBody');
@@ -615,7 +666,7 @@ document.addEventListener('DOMContentLoaded', function() {
       updateStats(); return;
     }
     var h = '';
-    cards.forEach(function(e) {
+    sortedCards().forEach(function(e) {
       var tl = tLabel(e.type);
       var dc = tl.c==='bs'?'ds':tl.c==='bt'?'dt':'dm';
       var tot = (e.qty||0)*(e.price||0);
