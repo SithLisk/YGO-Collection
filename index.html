@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scott's Yu-Gi-Oh! Collection Tracker</title>
+<title>Scott's Yu-Gi-Oh! Scott's Yu-Gi-Oh!<br>Collection Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -54,7 +54,7 @@ body::before {
     radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
     radial-gradient(1.5px 1.5px at 50% 80%, rgba(240,192,64,0.5) 0%, transparent 100%);
 }
-.wrap { position: relative; z-index: 1; width: 100%; padding: 0 24px 60px; }
+.wrap { position: relative; z-index: 1; width: 75%; margin: 0 auto; padding: 0 24px 60px; }
 
 header { text-align: center; padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; position: relative; }
 header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 200px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
@@ -145,13 +145,13 @@ input[type="text"]::placeholder { color: var(--silver-dim); }
 .stat { text-align: center; }
 .stat-n { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold-pale); display: block; }
 .stat-l { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
-.tbl-wrap { overflow: hidden; width: 100%; }
-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+.tbl-wrap { overflow-x: auto; width: 100%; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: auto; }
 thead th { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0; text-transform: uppercase; color: var(--silver-dim); padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; background: rgba(10,2,2,0.4); }
 tbody tr { border-bottom: 1px solid rgba(180,40,40,0.1); transition: background 0.15s; }
 tbody tr:hover { background: rgba(160,30,30,0.08); }
 tbody tr:last-child { border-bottom: none; }
-td { padding: 7px 8px; vertical-align: middle; color: var(--silver); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space: nowrap; }
 .td-nm { font-size: 15px; font-weight: 600; color: var(--white); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 .dm         { background: #f4a261; }  /* generic monster - orange */
@@ -299,29 +299,15 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); overflow: h
     </div>
     <div class="tbl-wrap">
       <table>
-        <colgroup>
-          <col style="width:15%">  <!-- Card Name -->
-          <col style="width:7%">   <!-- Type -->
-          <col style="width:7%">   <!-- Attribute -->
-          <col style="width:9%">   <!-- Archetype -->
-          <col style="width:7%">   <!-- ATK/DEF -->
-          <col style="width:12%">  <!-- Set -->
-          <col style="width:8%">   <!-- Card No. -->
-          <col style="width:9%">   <!-- Rarity -->
-          <col style="width:8%">   <!-- Condition -->
-          <col style="width:7%">   <!-- Edition -->
-          <col style="width:4%">   <!-- Qty -->
-          <col style="width:7%">   <!-- delete -->
-        </colgroup>
         <thead><tr id="tableHeaders">
-          <th onclick="sortBy('name')"      class="sortable">Card Name <span class="sort-icon" id="si-name"></span></th>
+          <th onclick="sortBy('name')"      class="sortable" style="min-width:160px">Card Name <span class="sort-icon" id="si-name"></span></th>
           <th onclick="sortBy('type')"      class="sortable">Type <span class="sort-icon" id="si-type"></span></th>
           <th onclick="sortBy('attribute')" class="sortable">Attribute <span class="sort-icon" id="si-attribute"></span></th>
           <th onclick="sortBy('archetype')" class="sortable">Archetype <span class="sort-icon" id="si-archetype"></span></th>
           <th onclick="sortBy('atk')"       class="sortable">ATK/DEF <span class="sort-icon" id="si-atk"></span></th>
-          <th onclick="sortBy('setName')"   class="sortable">Set <span class="sort-icon" id="si-setName"></span></th>
+          <th onclick="sortBy('setName')"   class="sortable" style="min-width:140px">Set <span class="sort-icon" id="si-setName"></span></th>
           <th onclick="sortBy('cardNumber')" class="sortable">Card No. <span class="sort-icon" id="si-cardNumber"></span></th>
-          <th onclick="sortBy('rarity')"    class="sortable">Rarity <span class="sort-icon" id="si-rarity"></span></th>
+          <th onclick="sortBy('rarity')"    class="sortable" style="min-width:120px">Rarity <span class="sort-icon" id="si-rarity"></span></th>
           <th onclick="sortBy('condition')" class="sortable">Condition <span class="sort-icon" id="si-condition"></span></th>
           <th onclick="sortBy('edition')"   class="sortable">Edition <span class="sort-icon" id="si-edition"></span></th>
           <th onclick="sortBy('qty')"       class="sortable">Qty <span class="sort-icon" id="si-qty"></span></th>
