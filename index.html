@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scott's Yu-Gi-Oh! Scott's Yu-Gi-Oh!<br>Collection Tracker</title>
+<title>Yu-Gi-Oh! Collection Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -279,7 +279,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     </div>
   </div>
   <div class="eyebrow" style="display:none">placeholder</div>
-    <h1>Scott's Yu-Gi-Oh!<br>Collection Tracker</h1>
+    <h1><span id="headerProfileName">Yu-Gi-Oh!</span><br>Collection Tracker</h1>
     <p class="subtitle">Search. Add. Sort. Enjoy.</p>
     </div>
   </header>
@@ -305,7 +305,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <div style="position:relative;z-index:1;text-align:center;width:100%;max-width:780px">
       <!-- Logo / Title -->
       <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:6px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:14px">Yu-Gi-Oh! Collection Tracker</div>
-      <h1 style="font-family:'Cinzel Decorative',serif;font-size:clamp(20px,4vw,34px);color:var(--gold-pale);letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 30px rgba(240,192,64,0.3)">Scott&#x2019;s Collection</h1>
+      <h1 style="font-family:'Cinzel Decorative',serif;font-size:clamp(20px,4vw,34px);color:var(--gold-pale);letter-spacing:3px;margin-bottom:8px;text-shadow:0 0 30px rgba(240,192,64,0.3)"><span id="profileScreenName">Collection</span></h1>
       <div style="width:120px;height:1px;background:linear-gradient(to right,transparent,var(--gold-dim),transparent);margin:12px auto 20px"></div>
       <p style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:3px;color:var(--silver-dim);text-transform:uppercase;margin-bottom:36px">Select a Profile</p>
 
@@ -1583,6 +1583,9 @@ window.onload = function() {
     var ps = document.getElementById('profileScreen');
     if (ps) { ps.classList.remove('active'); ps.style.display = 'none'; }
     document.getElementById('activeProfileLabel').textContent = profileName;
+    var hpn = document.getElementById('headerProfileName');
+    if (hpn) hpn.textContent = profileName + "'s Yu-Gi-Oh!";
+    document.title = profileName + "'s Yu-Gi-Oh! Collection Tracker";
     // Start scoped listeners
     authed = false;
     updateLockBtn();
@@ -1596,6 +1599,9 @@ window.onload = function() {
   window._showProfileScreen = window.showProfileScreen = function() {
     var ps = document.getElementById('profileScreen');
     if (!ps) { console.error('profileScreen element not found'); return; }
+    // Reset profile screen title back to generic when switching
+    var psn = document.getElementById('profileScreenName');
+    if (psn) psn.textContent = 'Collection';
     ps.style.display = 'flex';
     ps.classList.add('active');
     loadProfiles();
