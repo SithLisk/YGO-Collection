@@ -23,6 +23,40 @@
   --border: rgba(180,40,40,0.35);
   --glow: 0 0 20px rgba(160,30,30,0.4);
 }
+/* Theme: Dusk (Blue/Navy) */
+[data-theme="dusk"] {
+  --void: #020408;
+  --deep: #050d1a;
+  --mid: #0a1e3d;
+  --bright: #1a3a7a;
+  --accent: #2b5ce0;
+  --gold: #60b8f0;
+  --gold-dim: #2a78b0;
+  --gold-pale: #a8d8f8;
+  --silver: #c0d0e8;
+  --silver-dim: #4a6080;
+  --white: #f0f4ff;
+  --border: rgba(40,80,180,0.4);
+  --glow: 0 0 20px rgba(30,60,160,0.5);
+}
+/* Theme: Void (Emerald/Dark) */
+[data-theme="void"] {
+  --void: #020806;
+  --deep: #051a0f;
+  --mid: #0a3d20;
+  --bright: #1a7a40;
+  --accent: #27ae60;
+  --gold: #40f080;
+  --gold-dim: #1a9040;
+  --gold-pale: #a8f8c8;
+  --silver: #c0e8d0;
+  --silver-dim: #4a7060;
+  --white: #f0fff4;
+  --border: rgba(40,160,80,0.35);
+  --glow: 0 0 20px rgba(30,140,60,0.5);
+}
+.theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(12,3,3,0.8); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; }
+.theme-select option { background:#1a0505; color:#f0c040; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--void);
@@ -291,6 +325,11 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <span style="color:var(--silver-dim);font-size:9px;letter-spacing:1px">Changes sync automatically across all devices</span>
+      <select class="theme-select" id="themeSelect" onchange="applyTheme(this.value)" title="Color theme">
+        <option value="">&#127756; Maroon</option>
+        <option value="dusk">&#127754; Dusk</option>
+        <option value="void">&#127807; Void</option>
+      </select>
       <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
     </div>
   </div>
@@ -484,6 +523,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <input type="text" id="deckName" placeholder="Deck name..." style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:6px 12px;outline:none;width:180px">
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export .ydk</button>
+        <label class="btn" style="padding:8px 16px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import a .ydk file">&#8593; Import .ydk<input type="file" id="ydkImportInput" accept=".ydk,.txt" style="display:none" onchange="importYdk(this)"></label>
+        <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(60,30,160,0.3);color:var(--silver)" onclick="showDuplicateDeck()" title="Duplicate cards in this deck up to 3 copies each">&#x2398; Duplicate</button>
         <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
       </div>
     </div>
@@ -1362,7 +1403,7 @@ window.onload = function() {
       var countEl = document.getElementById(zone + 'Count');
       countEl.textContent = count;
       if (zone === 'main') {
-        countEl.className = 'deck-zone-count' + (count >= 40 && count <= 60 ? ' ok' : count > 0 ? ' warn' : '');
+        countEl.className = 'deck-zone-count' + (count > 0 ? ' ok' : '');
       } else if (zone === 'extra') {
         countEl.className = 'deck-zone-count' + (count <= 15 ? '' : ' warn');
       } else {
@@ -1396,14 +1437,13 @@ window.onload = function() {
     });
     var total = ['main','extra','side'].reduce(function(s,z){ return s + deck[z].reduce(function(s2,d){ return s2+d.qty; },0); }, 0);
     var mainCount = deck.main.reduce(function(s,d){ return s+d.qty; },0);
-    document.getElementById('deckTotalCount').textContent = total + ' cards (Main: ' + mainCount + (mainCount >= 40 ? ' ✓' : ' / 40 min') + ')';
+    document.getElementById('deckTotalCount').textContent = total + ' card' + (total !== 1 ? 's' : '') + ' — Main: ' + deck.main.reduce(function(s,d){return s+d.qty;},0) + ' • Extra: ' + deck.extra.reduce(function(s,d){return s+d.qty;},0) + ' • Side: ' + deck.side.reduce(function(s,d){return s+d.qty;},0);
   }
 
   window.exportDeck = function() {
     var name = document.getElementById('deckName').value || 'My Deck';
     var lines = ['# ' + name, '# Exported from Scott\'s YGO Collection Tracker', ''];
     var mainCount = deck.main.reduce(function(s,d){ return s+d.qty; },0);
-    if (mainCount < 40) { toast('Main deck needs at least 40 cards (' + mainCount + '/40)'); return; }
     lines.push('#main');
     deck.main.forEach(function(d){ for(var i=0;i<d.qty;i++) lines.push(d.name); });
     lines.push('');
@@ -1425,8 +1465,140 @@ window.onload = function() {
     toast('Deck cleared');
   };
 
+  // ── Import .ydk ────────────────────────────────────────────
+  window.importYdk = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var lines = e.target.result.replace(/\r/g, '').split('\n');
+      var zone = 'main';
+      var imported = { main: [], extra: [], side: [] };
+      lines.forEach(function(line) {
+        line = line.trim();
+        if (!line || line.startsWith('!') || line.startsWith('//')) return;
+        if (line === '#main')  { zone = 'main';  return; }
+        if (line === '#extra') { zone = 'extra'; return; }
+        if (line === '#side')  { zone = 'side';  return; }
+        if (line.startsWith('#')) return;
+        // .ydk lines are card IDs — try to match against loaded collection by name
+        // If numeric, skip (we store by name not ID); if text, match by name
+        if (/^[0-9]+$/.test(line)) {
+          // Numeric ID — try to find in collection by cardImageId
+          var match = cards.find(function(c) { return String(c.cardImageId) === line; });
+          if (match) {
+            var existing = imported[zone].find(function(d){ return d.fid === match.fid; });
+            if (existing) { if (existing.qty < 3) existing.qty++; }
+            else imported[zone].push({ fid: match.fid, name: match.name, type: match.type, qty: 1 });
+          }
+        } else {
+          // Text name
+          var match = cards.find(function(c){ return c.name.toLowerCase() === line.toLowerCase(); });
+          if (match) {
+            var existing = imported[zone].find(function(d){ return d.fid === match.fid; });
+            if (existing) { if (existing.qty < 3) existing.qty++; }
+            else imported[zone].push({ fid: match.fid, name: match.name, type: match.type, qty: 1 });
+          }
+        }
+      });
+      var total = imported.main.length + imported.extra.length + imported.side.length;
+      if (!total) { toast('No matching cards found in your collection'); input.value = ''; return; }
+      deck.main  = imported.main;
+      deck.extra = imported.extra;
+      deck.side  = imported.side;
+      var name = file.name.replace(/\.ydk$/i,'').replace(/_/g,' ');
+      document.getElementById('deckName').value = name;
+      renderDeck();
+      toast('Imported ' + total + ' card entr' + (total===1?'y':'ies') + ' from ' + file.name);
+      input.value = '';
+    };
+    reader.readAsText(file);
+  };
+
+  // ── Duplicate deck (up to 3 copies each) ──────────────────
+  window.showDuplicateDeck = function() {
+    var total = ['main','extra','side'].reduce(function(s,z){
+      return s + deck[z].reduce(function(s2,d){ return s2+d.qty; },0);
+    }, 0);
+    if (!total) { toast('Deck is empty'); return; }
+    ['main','extra','side'].forEach(function(zone) {
+      deck[zone].forEach(function(d) { d.qty = Math.min(d.qty * 2, 3); });
+    });
+    renderDeck();
+    toast('All cards duplicated (max 3 copies each)');
+  };
+
+  // ── Theme ──────────────────────────────────────────────────
+  window.applyTheme = function(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    if (activeProfileId) {
+      db.collection('profiles').doc(activeProfileId).update({ theme: theme }).catch(function(){});
+    }
+    localStorage.setItem('theme_' + (activeProfileId || 'default'), theme);
+  };
+
+  function loadTheme() {
+    var stored = localStorage.getItem('theme_' + (activeProfileId || 'default')) || '';
+    document.documentElement.setAttribute('data-theme', stored);
+    var sel = document.getElementById('themeSelect');
+    if (sel) sel.value = stored;
+  }
+
+  // Patch selectProfile to load theme on profile switch
+  var _origSelectProfile = window.selectProfile;
+  // (theme loading injected into selectProfile below)
+
+  // ── Drag and drop: collection rows → deck zones ────────────
+  function makeDraggable() {
+    var rows = document.querySelectorAll('#collBody tr');
+    rows.forEach(function(row) {
+      var fidCell = row.querySelector('[data-fid]') || row.querySelector('.qty-btn');
+      if (!fidCell) return;
+      var fid = fidCell.dataset.fid;
+      if (!fid) return;
+      row.setAttribute('draggable', true);
+      row.style.cursor = 'grab';
+      row.addEventListener('dragstart', function(ev) {
+        ev.dataTransfer.setData('text/plain', fid);
+        ev.dataTransfer.effectAllowed = 'copy';
+        row.style.opacity = '0.5';
+      });
+      row.addEventListener('dragend', function() {
+        row.style.opacity = '';
+      });
+    });
+  }
+
+  // Make deck zones drop targets
+  ['main','extra','side'].forEach(function(zone) {
+    var el = document.getElementById(zone + 'Deck');
+    if (!el) return;
+    el.addEventListener('dragover', function(ev) {
+      ev.preventDefault();
+      ev.dataTransfer.dropEffect = 'copy';
+      el.style.background = 'rgba(240,192,64,0.06)';
+    });
+    el.addEventListener('dragleave', function() {
+      el.style.background = '';
+    });
+    el.addEventListener('drop', function(ev) {
+      ev.preventDefault();
+      el.style.background = '';
+      var fid = ev.dataTransfer.getData('text/plain');
+      if (fid) addToDeck(fid, zone);
+    });
+  });
+
+  // Re-run makeDraggable after every renderTable
+  var _origRenderTable = renderTable;
+  renderTable = function() {
+    _origRenderTable();
+    setTimeout(makeDraggable, 0);
+  };
+
   // Init deck render
   renderDeck();
+  loadTheme();
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
