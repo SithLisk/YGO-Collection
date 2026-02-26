@@ -323,8 +323,13 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
       <div style="font-family:'Cinzel',serif;font-size:12px;letter-spacing:4px;color:var(--gold);text-transform:uppercase;margin-bottom:6px">New Profile</div>
       <div style="width:60px;height:1px;background:linear-gradient(to right,transparent,var(--gold-dim),transparent);margin:0 auto 20px"></div>
       <input id="newProfileName" type="text" placeholder="Enter your name" maxlength="24" autocomplete="off"
+        style="background:rgba(6,1,1,0.8);border:1px solid rgba(240,192,64,0.2);border-radius:10px;color:var(--white);font-family:'Cinzel',serif;font-size:15px;letter-spacing:2px;padding:12px 16px;outline:none;width:100%;margin-bottom:12px;text-align:center;transition:border-color 0.2s"
+        onfocus="this.style.borderColor='rgba(240,192,64,0.5)'" onblur="this.style.borderColor='rgba(240,192,64,0.2)'"
+        onkeydown="if(event.key==='Enter')document.getElementById('newProfilePw').focus()">
+      <input id="newProfilePw" type="password" placeholder="Password" autocomplete="off"
         style="background:rgba(6,1,1,0.8);border:1px solid rgba(240,192,64,0.2);border-radius:10px;color:var(--white);font-family:'Cinzel',serif;font-size:15px;letter-spacing:2px;padding:12px 16px;outline:none;width:100%;margin-bottom:10px;text-align:center;transition:border-color 0.2s"
-        onfocus="this.style.borderColor='rgba(240,192,64,0.5)'" onblur="this.style.borderColor='rgba(240,192,64,0.2)'">
+        onfocus="this.style.borderColor='rgba(240,192,64,0.5)'" onblur="this.style.borderColor='rgba(240,192,64,0.2)'"
+        onkeydown="if(event.key==='Enter')createProfile()">
       <div id="newProfileError" style="color:#f87171;font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;margin-bottom:14px;min-height:14px"></div>
       <div style="display:flex;gap:10px;justify-content:center">
         <button onclick="createProfile()"
@@ -1675,25 +1680,38 @@ window.onload = function() {
 
   window.createProfile = function() {
     var name = document.getElementById('newProfileName').value.trim();
+    var pw   = document.getElementById('newProfilePw').value;
     var errEl = document.getElementById('newProfileError');
     if (!name) { errEl.textContent = 'Please enter a name'; return; }
     if (name.length > 24) { errEl.textContent = 'Name too long (max 24 chars)'; return; }
-    errEl.textContent = '';
-    db.collection('profiles').add({
-      name: name,
-      cardCount: 0,
-      createdAt: Date.now()
-    }).then(function(ref) {
-      closeNewProfileModal();
-      selectProfile(ref.id, name);
-    }).catch(function(e) {
-      errEl.textContent = 'Error: ' + e.message;
+    if (!pw) { errEl.textContent = 'Password required'; return; }
+    errEl.textContent = 'Verifying...';
+    sha256(pw).then(function(hash) {
+      if (hash !== PW_HASH) {
+        errEl.textContent = 'Incorrect password';
+        document.getElementById('newProfilePw').value = '';
+        return;
+      }
+      errEl.textContent = '';
+      db.collection('profiles').add({
+        name: name,
+        cardCount: 0,
+        createdAt: Date.now()
+      }).then(function(ref) {
+        authed = true;
+        updateLockBtn();
+        closeNewProfileModal();
+        selectProfile(ref.id, name);
+      }).catch(function(e) {
+        errEl.textContent = 'Error: ' + e.message;
+      });
     });
   };
 
   window.closeNewProfileModal = function() {
     document.getElementById('newProfileModal').style.display = 'none';
     document.getElementById('newProfileName').value = '';
+    document.getElementById('newProfilePw').value = '';
     document.getElementById('newProfileError').textContent = '';
   };
 
@@ -1732,7 +1750,10 @@ window.onload = function() {
   // ── Key handler for new profile modal ──
   var npnEl = document.getElementById('newProfileName');
   if (npnEl) npnEl.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') createProfile();
+    if (e.key === 'Escape') closeNewProfileModal();
+  });
+  var nppEl = document.getElementById('newProfilePw');
+  if (nppEl) nppEl.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeNewProfileModal();
   });
 
