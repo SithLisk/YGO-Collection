@@ -657,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
     sync('syncing','Saving...');
     col.add({
-      name: c.name, type: c.type, race: c.race||'—',
+      name: c.name, type: c.type, race: c.race||'—', level: c.level||c.linkval||null,
       attribute: c.attribute||'—',
       archetype: c.archetype||'—',
       atk: c.atk!==undefined ? (c.atk===-1?'?':String(c.atk)) : '—',
@@ -735,8 +735,9 @@ document.addEventListener('DOMContentLoaded', function() {
       h += '<tr>';
       var lvlStr = '';
       if (e.level) {
-        var prefix = (e.type && e.type.toLowerCase().indexOf('xyz') !== -1) ? 'R' : 'L';
-        lvlStr = ' <span style="font-size:11px;color:var(--silver-dim);font-family:Cinzel,serif">(' + prefix + '-' + e.level + ')</span>';
+        var t = (e.type||'').toLowerCase();
+        var prefix = t.indexOf('xyz') !== -1 ? 'R' : t.indexOf('link') !== -1 ? 'Link-' : 'L';
+        lvlStr = ' <span style="font-size:11px;color:var(--silver-dim);font-family:Cinzel,serif">(' + prefix + e.level + ')</span>';
       }
       var nameClick = 'openCardModal(' + JSON.stringify(e.name) + ')';
       h += '<td class="td-nm"><span class="dot ' + dc + '"></span><span class="card-link" onclick="' + esc(nameClick) + '">' + esc(e.name) + '</span>' + lvlStr + '</td>';
