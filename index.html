@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>YGO Collection Tracker</title>
+<title>Scott's Yu-Gi-Oh! Scott's Yu-Gi-Oh!<br>Collection Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -139,9 +139,17 @@ tbody tr:last-child { border-bottom: none; }
 td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
 .td-nm { font-size: 15px; font-weight: 600; color: var(--white); min-width: 160px; }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
-.dm { background: #f4a261; }
-.ds { background: #4ecdc4; }
-.dt { background: #f48fb1; }
+.dm         { background: #f4a261; }  /* generic monster - orange */
+.d-effect   { background: #f97316; }  /* effect monster - deep orange */
+.d-normal   { background: #fbbf24; }  /* normal monster - gold */
+.d-fusion   { background: #a855f7; }  /* fusion - purple */
+.d-synchro  { background: #e2e8f0; }  /* synchro - white */
+.d-xyz      { background: #1e1e1e; box-shadow: 0 0 4px #666; }  /* xyz - black */
+.d-link     { background: #3b82f6; }  /* link - blue */
+.d-ritual   { background: #818cf8; }  /* ritual - indigo */
+.d-pendulum { background: #10b981; }  /* pendulum - teal-green */
+.ds         { background: #4ecdc4; }  /* spell - teal */
+.dt         { background: #f48fb1; }  /* trap - pink */
 .td-pr { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); white-space: nowrap; }
 .td-qt { font-family: 'Cinzel Decorative', serif; font-size: 15px; color: var(--gold-pale); text-align: center; }
 .td-sm { font-size: 12px; color: var(--silver-dim); }
@@ -180,7 +188,7 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
 
   <header>
     <div class="eyebrow">Live API &middot; Cloud Sync &middot; YGOPRODeck</div>
-    <h1>Scott's Yu-Gi-Oh! Collection Tracker</h1>
+    <h1>Scott's Yu-Gi-Oh!<br>Collection Tracker</h1>
     <p class="subtitle">Search. Add. Sort. Enjoy.</p>
   </header>
 
@@ -260,11 +268,10 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
 
   <div class="coll-panel">
     <div class="panel-hdr">
-      <div class="panel-ttl">My Collection:</div>
+      <div class="panel-ttl">My Collection</div>
       <div class="stats-row">
         <div class="stat"><span class="stat-n" id="statUnique">0</span><span class="stat-l">Unique</span></div>
         <div class="stat"><span class="stat-n" id="statTotal">0</span><span class="stat-l">Total Cards</span></div>
-        <div class="stat"><span class="stat-n" id="statValue">$0</span><span class="stat-l">Est. Value</span></div>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -281,12 +288,10 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
           <th onclick="sortBy('condition')" class="sortable">Condition <span class="sort-icon" id="si-condition"></span></th>
           <th onclick="sortBy('edition')"   class="sortable">Edition <span class="sort-icon" id="si-edition"></span></th>
           <th onclick="sortBy('qty')"       class="sortable">Qty <span class="sort-icon" id="si-qty"></span></th>
-          <th onclick="sortBy('total')"     class="sortable">Total <span class="sort-icon" id="si-total"></span></th>
-          <th onclick="sortBy('notes')"     class="sortable">Notes <span class="sort-icon" id="si-notes"></span></th>
           <th></th>
         </tr></thead>
         <tbody id="collBody">
-          <tr><td colspan="14"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
+          <tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -512,11 +517,7 @@ document.addEventListener('DOMContentLoaded', function() {
       for (var i=0; i<opts.length; i++) { if (opts[i].value===s.set_rarity) { document.getElementById('fRarity').selectedIndex=i; break; } }
     } else { se.textContent = 'No set info'; }
 
-    // Store attribute and card number on the selected card for use in addToCollection
-    if (card.attribute) {
-      var adEl = document.getElementById('previewAtkDef');
-      adEl.innerHTML += ' &nbsp;&middot;&nbsp; <b style="color:var(--silver)">' + esc(card.attribute) + '</b>';
-    }
+
 
     var wrap = document.getElementById('cardImgWrap');
     if (card.card_images && card.card_images.length) {
@@ -604,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
     sync('syncing','Saving...');
     col.add({
-      name: c.name, type: c.type,
+      name: c.name, type: c.type, race: c.race||'—',
       attribute: c.attribute||'—',
       archetype: c.archetype||'—',
       atk: c.atk!==undefined ? (c.atk===-1?'?':String(c.atk)) : '—',
@@ -672,17 +673,22 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderTable() {
     var tbody = document.getElementById('collBody');
     if (!cards.length) {
-      tbody.innerHTML = '<tr><td colspan="14"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
       updateStats(); return;
     }
     var h = '';
     sortedCards().forEach(function(e) {
       var tl = tLabel(e.type);
-      var dc = tl.c==='bs'?'ds':tl.c==='bt'?'dt':'dm';
+      var dc = dotClass(e.type);
       var tot = (e.qty||0)*(e.price||0);
       h += '<tr>';
-      h += '<td class="td-nm"><span class="dot ' + dc + '"></span>' + esc(e.name) + '</td>';
-      h += '<td class="td-sm">' + esc(e.type) + '</td>';
+      var lvlStr = '';
+      if (e.level) {
+        var prefix = (e.type && e.type.toLowerCase().indexOf('xyz') !== -1) ? 'R' : 'L';
+        lvlStr = ' <span style="font-size:11px;color:var(--silver-dim);font-family:Cinzel,serif">(' + prefix + '-' + e.level + ')</span>';
+      }
+      h += '<td class="td-nm"><span class="dot ' + dc + '"></span>' + esc(e.name) + lvlStr + '</td>';
+      h += '<td class="td-sm">' + esc(e.race||'—') + '</td>';
       h += '<td class="td-sm">' + attrBadge(e.attribute) + '</td>';
       h += '<td class="td-sm">' + esc(e.archetype) + '</td>';
       h += '<td class="td-atk">' + (e.atk!=='—' ? e.atk+' / '+e.def : '—') + '</td>';
@@ -692,8 +698,6 @@ document.addEventListener('DOMContentLoaded', function() {
       h += '<td><span class="cb ' + cClass(e.condition) + '">' + esc(e.condition) + '</span></td>';
       h += '<td class="td-sm">' + esc(e.edition) + '</td>';
       h += '<td class="td-qt">' + (e.qty||0) + '</td>';
-      h += '<td class="td-pr">' + (tot ? '$'+tot.toFixed(2) : '—') + '</td>';
-      h += '<td class="td-sm" style="max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + esc(e.notes) + '</td>';
       h += '<td><button class="btn-del" onclick="removeEntry(\'' + e.fid + '\')">X</button></td>';
       h += '</tr>';
     });
@@ -704,8 +708,6 @@ document.addEventListener('DOMContentLoaded', function() {
   function updateStats() {
     document.getElementById('statUnique').textContent = cards.length;
     document.getElementById('statTotal').textContent = cards.reduce(function(s,e){return s+(e.qty||0);},0);
-    var v = cards.reduce(function(s,e){return s+(e.qty||0)*(e.price||0);},0);
-    document.getElementById('statValue').textContent = '$'+v.toFixed(2);
   }
 
   // Export
@@ -737,6 +739,22 @@ document.addEventListener('DOMContentLoaded', function() {
   };
 
   // Helpers
+  function dotClass(type) {
+    if (!type) return 'dm';
+    var t = type.toLowerCase();
+    if (t.indexOf('spell') !== -1) return 'ds';
+    if (t.indexOf('trap')  !== -1) return 'dt';
+    if (t.indexOf('fusion')  !== -1) return 'd-fusion';
+    if (t.indexOf('synchro') !== -1) return 'd-synchro';
+    if (t.indexOf('xyz')     !== -1) return 'd-xyz';
+    if (t.indexOf('link')    !== -1) return 'd-link';
+    if (t.indexOf('ritual')  !== -1) return 'd-ritual';
+    if (t.indexOf('pendulum') !== -1) return 'd-pendulum';
+    if (t.indexOf('effect')  !== -1) return 'd-effect';
+    if (t.indexOf('normal')  !== -1) return 'd-normal';
+    return 'dm';
+  }
+
   function attrBadge(attr) {
     if (!attr || attr === '—') return '<span style="color:var(--silver-dim)">—</span>';
     var colors = {
