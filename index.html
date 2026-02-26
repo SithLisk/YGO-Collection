@@ -193,6 +193,10 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .sort-icon { font-size: 8px; margin-left: 4px; opacity: 0.5; }
 .sort-icon.asc::after  { content: ' ▲'; opacity: 1; color: var(--gold); }
 .sort-icon.desc::after { content: ' ▼'; opacity: 1; color: var(--gold); }
+.coll-filter-opt { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; color: var(--silver); transition: background 0.15s, color 0.15s; border-bottom: 1px solid rgba(180,40,40,0.12); }
+.coll-filter-opt:last-child { border-bottom: none; }
+.coll-filter-opt:hover { background: rgba(160,30,30,0.25); color: var(--gold-pale); }
+.coll-filter-opt.active { color: var(--gold); background: rgba(160,30,30,0.15); }
 .card-link { cursor: pointer; border-bottom: 1px dotted rgba(240,192,64,0.4); transition: color 0.15s, border-color 0.15s; }
 .card-link:hover { color: var(--gold-pale); border-bottom-color: var(--gold); }
 .toast { position: fixed; bottom: 32px; right: 32px; background: rgba(20,5,5,0.98); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold-pale); box-shadow: var(--glow); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; }
@@ -291,7 +295,19 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 
   <div class="coll-panel">
     <div class="panel-hdr">
-      <div class="panel-ttl">My Collection</div>
+      <div style="position:relative;display:inline-block">
+        <button id="collFilterBtn" onclick="toggleCollDropdown()" style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0">
+          My Collection
+          <span id="collFilterLabel" style="font-size:9px;color:var(--accent);letter-spacing:1px"></span>
+          <span style="font-size:10px;color:var(--silver-dim)">&#9660;</span>
+        </button>
+        <div id="collDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a0505;border:1px solid var(--border);border-radius:10px;min-width:160px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden">
+          <div class="coll-filter-opt" onclick="setCollTypeFilter('')">All Cards</div>
+          <div class="coll-filter-opt" onclick="setCollTypeFilter('monster')">&#x25CF; Monsters</div>
+          <div class="coll-filter-opt" onclick="setCollTypeFilter('spell')">&#x25CF; Spells</div>
+          <div class="coll-filter-opt" onclick="setCollTypeFilter('trap')">&#x25CF; Traps</div>
+        </div>
+      </div>
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div style="position:relative">
           <input type="text" id="collSearch" placeholder="&#x1F50D; Filter collection..." autocomplete="off"
@@ -353,7 +369,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 <div class="toast" id="toast"></div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+window.onload = function() {
 
   // Firebase init
   firebase.initializeApp({
@@ -615,6 +631,7 @@ document.addEventListener('DOMContentLoaded', function() {
   var sortCol = null;
   var sortDir = 1;
   var collFilter = '';
+  var collTypeFilter = '';
 
   function sha256(str) {
     // Use SubtleCrypto to hash the password
@@ -714,6 +731,40 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
+  // Collection type dropdown
+  window.toggleCollDropdown = function() {
+    var dd = document.getElementById('collDropdown');
+    dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  };
+
+  window.setCollTypeFilter = function(type) {
+    collTypeFilter = type;
+    // Update active state on options
+    document.querySelectorAll('.coll-filter-opt').forEach(function(el) {
+      el.classList.remove('active');
+      var txt = el.textContent.trim().toLowerCase();
+      if ((type === '' && txt === 'all cards') ||
+          (type === 'monster' && txt.indexOf('monster') !== -1) ||
+          (type === 'spell'   && txt.indexOf('spell')   !== -1) ||
+          (type === 'trap'    && txt.indexOf('trap')    !== -1)) {
+        el.classList.add('active');
+      }
+    });
+    // Update label next to title
+    var labels = { '': '', 'monster': '— Monsters', 'spell': '— Spells', 'trap': '— Traps' };
+    document.getElementById('collFilterLabel').textContent = labels[type] || '';
+    document.getElementById('collDropdown').style.display = 'none';
+    renderTable();
+  };
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#collFilterBtn') && !e.target.closest('#collDropdown')) {
+      var dd = document.getElementById('collDropdown');
+      if (dd) dd.style.display = 'none';
+    }
+  });
+
   // Collection filter
   window.filterCollection = function() {
     var inp = document.getElementById('collSearch');
@@ -761,8 +812,18 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function filteredCards() {
-    if (!collFilter) return cards;
-    return cards.filter(function(e) {
+    var base = cards;
+    // Type filter (Monsters / Spells / Traps)
+    if (collTypeFilter) {
+      base = base.filter(function(e) {
+        var t = (e.type||'').toLowerCase();
+        if (collTypeFilter === 'monster') return t.indexOf('spell') === -1 && t.indexOf('trap') === -1;
+        return t.indexOf(collTypeFilter) !== -1;
+      });
+    }
+    // Text search filter
+    if (!collFilter) return base;
+    return base.filter(function(e) {
       return [e.name, e.type, e.race, e.attribute, e.archetype, e.setName, e.cardNumber, e.rarity, e.condition, e.edition]
         .some(function(v) { return String(v||'').toLowerCase().indexOf(collFilter) !== -1; });
     });
