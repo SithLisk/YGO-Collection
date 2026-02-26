@@ -44,8 +44,7 @@
   --border: rgba(50,100,200,0.4);
   --glow: 0 0 20px rgba(30,70,180,0.5);
 }
-[data-theme="dusk"] body { background: #03060f; }
-[data-theme="dusk"] .page-bg { background: #03060f; }
+/* Dusk: bg image stays, content boxes shift to navy */
 
 /* ── Theme: Obsidian (Deep Teal/Green) ─────────────────────────
    Background: #020c0a  Contrast ratios (WCAG AA):
@@ -68,11 +67,38 @@
   --border: rgba(40,160,90,0.38);
   --glow: 0 0 20px rgba(25,130,70,0.5);
 }
-[data-theme="void"] body { background: #020c0a; }
-[data-theme="void"] .page-bg { background: #020c0a; }
+/* Obsidian: bg image stays, content boxes shift to teal */
 
 .theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; transition:border-color 0.2s; }
 .theme-select option { background:#060606; color:#f0c040; }
+
+/* ── Dusk theme: content boxes → navy ───────────────────── */
+[data-theme="dusk"] .coll-panel,
+[data-theme="dusk"] .deck-section,
+[data-theme="dusk"] #pwModal > div,
+[data-theme="dusk"] #newProfileModal > div,
+[data-theme="dusk"] #cardModal > div,
+[data-theme="dusk"] .saved-deck-card { background: rgba(6,14,32,0.92); }
+[data-theme="dusk"] .panel-hdr,
+[data-theme="dusk"] .deck-hdr { background: rgba(3,8,20,0.95); border-bottom-color: rgba(50,100,200,0.3); }
+[data-theme="dusk"] .deck-zone { background: rgba(6,14,32,0.6); border-color: rgba(50,100,200,0.2); }
+[data-theme="dusk"] #profileScreen > div:first-child { background: rgba(3,6,15,0.97); }
+[data-theme="dusk"] .ps-card { background: linear-gradient(160deg,rgba(6,14,32,0.9),rgba(3,8,20,0.95)); }
+[data-theme="dusk"] .tab-nav { background: rgba(3,8,20,0.95); border-bottom-color: rgba(50,100,200,0.25); }
+
+/* ── Obsidian theme: content boxes → deep teal ──────────── */
+[data-theme="void"] .coll-panel,
+[data-theme="void"] .deck-section,
+[data-theme="void"] #pwModal > div,
+[data-theme="void"] #newProfileModal > div,
+[data-theme="void"] #cardModal > div,
+[data-theme="void"] .saved-deck-card { background: rgba(5,20,14,0.92); }
+[data-theme="void"] .panel-hdr,
+[data-theme="void"] .deck-hdr { background: rgba(2,12,8,0.95); border-bottom-color: rgba(40,160,90,0.3); }
+[data-theme="void"] .deck-zone { background: rgba(5,20,14,0.6); border-color: rgba(40,160,90,0.2); }
+[data-theme="void"] #profileScreen > div:first-child { background: rgba(2,8,5,0.97); }
+[data-theme="void"] .ps-card { background: linear-gradient(160deg,rgba(5,20,14,0.9),rgba(2,12,8,0.95)); }
+[data-theme="void"] .tab-nav { background: rgba(2,12,8,0.95); border-bottom-color: rgba(40,160,90,0.25); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--void);
@@ -576,6 +602,20 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   </div>
 
 </div>
+
+  <!-- Saved Decks Tab -->
+  <div class="tab-pane" id="pane-decks">
+    <div class="coll-panel">
+      <div class="panel-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase">
+          &#x2261; Saved Decks
+          <span id="savedDeckCount" style="font-size:10px;color:var(--silver-dim);margin-left:10px"></span>
+        </div>
+      </div>
+      <div class="saved-decks-grid" id="savedDecksGrid"></div>
+    </div>
+  </div>
+
 <div id="cardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)closeCardModal()">
   <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:720px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;overflow:hidden">
     <button onclick="closeCardModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--silver-dim);font-size:26px;cursor:pointer;z-index:1;line-height:1">&#x2715;</button>
@@ -619,6 +659,7 @@ window.onload = function() {
   var activeProfileName = localStorage.getItem('activeProfileName') || null;
   var col = null;
   var cardsUnsub = null;
+  var decksUnsub = null;
 
   var selCard = null;
   var cards = [];
@@ -1726,17 +1767,21 @@ window.onload = function() {
   var savedDecks = [];
   function loadSavedDecks() {
     if (!activeProfileId) return;
-    db.collection('profiles').doc(activeProfileId).collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
+    if (decksUnsub) { decksUnsub(); decksUnsub = null; }
+    decksUnsub = db.collection('profiles').doc(activeProfileId).collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
       savedDecks = [];
       snap.forEach(function(doc) {
         savedDecks.push(Object.assign({ did: doc.id }, doc.data()));
       });
       var countEl = document.getElementById('savedDeckCount');
       if (countEl) countEl.textContent = savedDecks.length + ' deck' + (savedDecks.length !== 1 ? 's' : '');
-      if (document.getElementById('pane-decks').classList.contains('active')) renderSavedDecks();
+      // Always re-render — both when tab is active and when a save just happened
+      renderSavedDecks();
+    }, function(err) {
+      console.error('Decks listener error:', err);
     });
   }
-  loadSavedDecks();
+  // Do NOT call loadSavedDecks() here — called by selectProfile once profile is active
 
   function renderSavedDecks() {
     var grid = document.getElementById('savedDecksGrid');
@@ -1860,7 +1905,8 @@ window.onload = function() {
   window._showProfileScreen = window.showProfileScreen = function() {
     var ps = document.getElementById('profileScreen');
     if (!ps) { console.error('profileScreen element not found'); return; }
-    // Reset profile screen title back to generic when switching
+    if (decksUnsub) { decksUnsub(); decksUnsub = null; }
+    if (cardsUnsub) { cardsUnsub(); cardsUnsub = null; }
     var psn = document.getElementById('profileScreenName');
     if (psn) psn.textContent = 'Collection';
     ps.style.display = 'flex';
