@@ -591,7 +591,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else { setEl.textContent = 'No set information available'; }
     const imgWrap = document.getElementById('cardImgWrap');
     if (card.card_images && card.card_images.length > 0) {
-      imgWrap.innerHTML = '<img src="https://images.ygoprodeck.com/images/cards_small/' + card.card_images[0].id + '.jpg" alt="' + escHtml(card.name) + '" onerror="this.parentElement.innerHTML='<div class=card-image-placeholder>🃏</div>'">';
+      var img = document.createElement('img'); img.src = 'https://images.ygoprodeck.com/images/cards_small/' + card.card_images[0].id + '.jpg'; img.alt = card.name; img.onerror = function(){ imgWrap.innerHTML = '<div class="card-image-placeholder">&#x1F0A3;</div>'; }; imgWrap.innerHTML = ''; imgWrap.appendChild(img);
     } else { imgWrap.innerHTML = '<div class="card-image-placeholder">🃏</div>'; }
   }
 
