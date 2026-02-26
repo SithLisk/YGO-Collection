@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Scott's Yu-Gi-Oh! Collection Tracker</title>
+<title>Scott's Yu-Gi-Oh! Scott's Yu-Gi-Oh!<br>Collection Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -292,9 +292,17 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   <div class="coll-panel">
     <div class="panel-hdr">
       <div class="panel-ttl">My Collection</div>
-      <div class="stats-row">
-        <div class="stat"><span class="stat-n" id="statUnique">0</span><span class="stat-l">Unique</span></div>
-        <div class="stat"><span class="stat-n" id="statTotal">0</span><span class="stat-l">Total Cards</span></div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="position:relative">
+          <input type="text" id="collSearch" placeholder="&#x1F50D; Filter collection..." autocomplete="off"
+            style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:7px 32px 7px 12px;outline:none;width:220px;transition:border-color 0.2s"
+            oninput="filterCollection()">
+          <span id="collClear" onclick="clearCollSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--silver-dim);font-size:14px">&#x2715;</span>
+        </div>
+        <div class="stats-row">
+          <div class="stat"><span class="stat-n" id="statUnique">0</span><span class="stat-l">Unique</span></div>
+          <div class="stat"><span class="stat-n" id="statTotal">0</span><span class="stat-l">Total Cards</span></div>
+        </div>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -605,7 +613,8 @@ document.addEventListener('DOMContentLoaded', function() {
   var PW_HASH = '663dc2bedc7eb3349bc80bff0c508111936a2a0d18269353a7ef7020ae24cc18';
   var authed = false;
   var sortCol = null;
-  var sortDir = 1; // 1 = asc, -1 = desc
+  var sortDir = 1;
+  var collFilter = '';
 
   function sha256(str) {
     // Use SubtleCrypto to hash the password
@@ -705,6 +714,21 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   };
 
+  // Collection filter
+  window.filterCollection = function() {
+    var inp = document.getElementById('collSearch');
+    collFilter = inp.value.trim().toLowerCase();
+    document.getElementById('collClear').style.display = collFilter ? 'inline' : 'none';
+    renderTable();
+  };
+
+  window.clearCollSearch = function() {
+    document.getElementById('collSearch').value = '';
+    collFilter = '';
+    document.getElementById('collClear').style.display = 'none';
+    renderTable();
+  };
+
   // Sort
   window.sortBy = function(col) {
     if (sortCol === col) {
@@ -728,9 +752,18 @@ document.addEventListener('DOMContentLoaded', function() {
     return String(e[col] || '').toLowerCase();
   }
 
+  function filteredCards() {
+    if (!collFilter) return cards;
+    return cards.filter(function(e) {
+      return [e.name, e.type, e.race, e.attribute, e.archetype, e.setName, e.cardNumber, e.rarity, e.condition, e.edition]
+        .some(function(v) { return String(v||'').toLowerCase().indexOf(collFilter) !== -1; });
+    });
+  }
+
   function sortedCards() {
-    if (!sortCol) return cards;
-    return cards.slice().sort(function(a, b) {
+    var base = filteredCards();
+    if (!sortCol) return base;
+    return base.slice().sort(function(a, b) {
       var av = getSortValue(a, sortCol);
       var bv = getSortValue(b, sortCol);
       if (av < bv) return -1 * sortDir;
@@ -784,8 +817,11 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function updateStats() {
-    document.getElementById('statUnique').textContent = cards.length;
-    document.getElementById('statTotal').textContent = cards.reduce(function(s,e){return s+(e.qty||0);},0);
+    var visible = filteredCards();
+    document.getElementById('statUnique').textContent = collFilter
+      ? visible.length + ' / ' + cards.length
+      : cards.length;
+    document.getElementById('statTotal').textContent = visible.reduce(function(s,e){return s+(e.qty||0);},0);
   }
 
   // Export
