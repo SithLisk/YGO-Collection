@@ -150,19 +150,19 @@ h1 { font-family: 'Cinzel Decorative', serif; font-size: clamp(22px,4vw,38px); f
 #syncLabel.syncing { color: var(--gold); }
 #syncLabel.error   { color: #f87171; }
 
-.search-panel { background: linear-gradient(135deg, rgba(35,5,5,0.9), rgba(8,4,4,0.95)); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; margin-bottom: 28px; box-shadow: var(--glow); position: relative; }
+.search-panel { background: linear-gradient(135deg, rgba(0,0,0,0.4), rgba(0,0,0,0.6)); border: 1px solid var(--border); border-radius: 16px; padding: 28px 32px; margin-bottom: 28px; box-shadow: var(--glow); position: relative; }
 .search-panel::before { content: '\2B21'; position: absolute; top: -12px; left: 50%; transform: translateX(-50%); font-size: 20px; color: var(--gold); background: var(--void); padding: 0 8px; }
 .sec-label { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; margin-bottom: 14px; }
 
 .test-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
-.btn-test { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: rgba(160,30,30,0.3); color: var(--gold-pale); border: 1px solid rgba(160,30,30,0.5); border-radius: 6px; padding: 6px 14px; cursor: pointer; }
-.btn-test:hover { background: rgba(160,30,30,0.5); }
+.btn-test { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; background: rgba(0,0,0,0.3); color: var(--gold-pale); border: 1px solid var(--border); border-radius: 6px; padding: 6px 14px; cursor: pointer; transition: background 0.2s; }
+.btn-test:hover { background: rgba(0,0,0,0.5); }
 #testResult { font-size: 13px; font-style: italic; color: var(--silver-dim); }
 
 .search-row { display: flex; gap: 12px; align-items: center; }
 .search-wrap { flex: 1; position: relative; }
-input[type="text"] { width: 100%; background: rgba(12,3,3,0.8); border: 1px solid var(--border); border-radius: 10px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 17px; padding: 13px 18px; outline: none; transition: border-color 0.2s; }
-input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(160,30,30,0.15); }
+input[type="text"] { width: 100%; background: rgba(0,0,0,0.45); border: 1px solid var(--border); border-radius: 10px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 17px; padding: 13px 18px; outline: none; transition: border-color 0.2s, box-shadow 0.2s; }
+input[type="text"]:focus { border-color: var(--gold-dim); box-shadow: 0 0 0 3px rgba(0,0,0,0.2); outline: 2px solid var(--gold-dim); outline-offset: -2px; }
 input[type="text"]::placeholder { color: var(--silver-dim); }
 .status-msg { font-size: 13px; font-style: italic; color: var(--silver-dim); min-width: 100px; }
 
@@ -294,6 +294,11 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .saved-deck-meta span { display: flex; align-items: center; gap: 4px; }
 .saved-deck-date { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; color: var(--silver-dim); margin-top: 4px; }
 .saved-deck-actions { display: flex; gap: 8px; margin-top: 12px; }
+.deck-card-list-section { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+.deck-card-list-section-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 6px; }
+.deck-card-list-item { font-size: 12px; color: var(--silver); padding: 2px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.deck-card-list-item:last-child { border-bottom: none; }
+.deck-card-list-item .qty-tag { font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold-dim); flex-shrink: 0; margin-left: 8px; }
 .deck-empty { text-align: center; padding: 60px 20px; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
 .coll-filter-opt { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; color: var(--silver); transition: background 0.15s, color 0.15s; border-bottom: 1px solid rgba(180,40,40,0.12); }
 .coll-filter-opt:last-child { border-bottom: none; }
@@ -1811,6 +1816,33 @@ window.onload = function() {
       date.textContent = d.savedAt ? new Date(d.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
       card.appendChild(date);
 
+      // Card lists by zone
+      ['main','extra','side'].forEach(function(zone) {
+        var zoneCards = d[zone] || [];
+        if (!zoneCards.length) return;
+        var section = document.createElement('div');
+        section.className = 'deck-card-list-section';
+        var label = document.createElement('div');
+        label.className = 'deck-card-list-section-label';
+        var zoneName = zone === 'main' ? 'Main Deck' : zone === 'extra' ? 'Extra Deck' : 'Side Deck';
+        label.textContent = zoneName + ' (' + zoneCards.reduce(function(s,c){return s+c.qty;},0) + ')';
+        section.appendChild(label);
+        zoneCards.forEach(function(c) {
+          var item = document.createElement('div');
+          item.className = 'deck-card-list-item';
+          var nameSpan = document.createElement('span');
+          nameSpan.textContent = c.name;
+          nameSpan.style.cssText = 'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1';
+          var qtySpan = document.createElement('span');
+          qtySpan.className = 'qty-tag';
+          qtySpan.textContent = c.qty > 1 ? 'x' + c.qty : '';
+          item.appendChild(nameSpan);
+          item.appendChild(qtySpan);
+          section.appendChild(item);
+        });
+        card.appendChild(section);
+      });
+
       var actions = document.createElement('div');
       actions.className = 'saved-deck-actions';
 
@@ -1823,14 +1855,14 @@ window.onload = function() {
 
       var expBtn = document.createElement('button');
       expBtn.className = 'btn';
-      expBtn.style.cssText = 'padding:6px 14px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)';
+      expBtn.style.cssText = 'padding:6px 14px;font-size:9px;background:rgba(0,0,0,0.3);color:var(--silver);border:1px solid var(--border)';
       expBtn.textContent = 'Export .ydk';
       expBtn.onclick = function(e){ e.stopPropagation(); exportSavedDeck(d); };
       actions.appendChild(expBtn);
 
       var delBtn = document.createElement('button');
       delBtn.className = 'btn';
-      delBtn.style.cssText = 'padding:6px 10px;font-size:9px;background:rgba(160,30,30,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)';
+      delBtn.style.cssText = 'padding:6px 10px;font-size:9px;background:rgba(0,0,0,0.2);color:#f87171;border:1px solid rgba(248,113,113,0.3)';
       delBtn.textContent = 'Delete';
       delBtn.onclick = function(e){ e.stopPropagation(); deleteSavedDeck(d.did, d.name); };
       actions.appendChild(delBtn);
