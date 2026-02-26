@@ -201,6 +201,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .card-link:hover { color: var(--gold-pale); border-bottom-color: var(--gold); }
 .td-thumb { width: 32px; padding: 4px 6px; }
 .td-thumb img { width: 28px; height: 40px; object-fit: cover; border-radius: 3px; display: block; border: 1px solid rgba(240,192,64,0.2); cursor: pointer; transition: transform 0.15s; }
+.thumb-img { width: 28px; height: 40px; object-fit: cover; border-radius: 3px; border: 1px solid rgba(240,192,64,0.2); cursor: pointer; transition: transform 0.15s; }
+.thumb-img:hover { transform: scale(1.08); }
 .td-thumb img:hover { transform: scale(1.08); }
 .qty-ctrl { display: flex; align-items: center; gap: 4px; justify-content: center; }
 .qty-btn { font-family: 'Cinzel',serif; font-size: 13px; width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border); background: rgba(160,30,30,0.2); color: var(--gold-pale); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s; padding: 0; }
@@ -959,7 +961,7 @@ window.onload = function() {
       var nameClick = 'openCardModal(' + JSON.stringify(e.name) + ')';
       var imgId = e.cardImageId || '';
       var thumbSrc = imgId ? 'https://images.ygoprodeck.com/images/cards_small/' + imgId + '.jpg' : '';
-      h += '<td class="td-thumb">' + (thumbSrc ? '<img src="' + thumbSrc + '" alt="" onclick="' + esc(nameClick) + '" onerror="this.style.display='none'">' : '') + '</td>';
+      h += '<td class="td-thumb">' + (thumbSrc ? '<img src="' + thumbSrc + '" alt="" class="thumb-img" onclick="' + esc(nameClick) + '">' : '') + '</td>';
       h += '<td class="td-nm"><span class="dot ' + dc + '"></span><span class="card-link" onclick="' + esc(nameClick) + '">' + esc(e.name) + '</span></td>';
       h += '<td class="td-sm">' + esc(getTypeDisplay(e)) + '</td>';
       h += '<td class="td-sm">' + attrBadge(e.attribute) + '</td>';
