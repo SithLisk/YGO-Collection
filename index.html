@@ -479,6 +479,10 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 <div class="toast" id="toast"></div>
 
 <script>
+// Global shims so inline onclick attrs work before window.onload fires
+function showProfileScreen() { if (window._showProfileScreen) window._showProfileScreen(); }
+function toggleAuth()        { if (window._toggleAuth)        window._toggleAuth();        }
+
 window.onload = function() {
 
   // Firebase init
@@ -760,7 +764,7 @@ window.onload = function() {
     });
   }
 
-  window.toggleAuth = function() {
+  window._toggleAuth = window.toggleAuth = function() {
     if (authed) {
       authed = false;
       updateLockBtn();
@@ -1388,6 +1392,7 @@ window.onload = function() {
         sideCount:  deck.side.reduce(function(s,d){ return s+d.qty; },0),
         savedAt: Date.now()
       };
+      if (!activeProfileId) { toast('No profile selected'); return; }
       db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData).then(function() {
         toast('Deck saved: ' + name);
       }).catch(function(e){ toast('Save failed: ' + e.message); });
@@ -1397,6 +1402,7 @@ window.onload = function() {
   // ── Load saved decks from Firestore ───────────────────────
   var savedDecks = [];
   function loadSavedDecks() {
+    if (!activeProfileId) return;
     db.collection('profiles').doc(activeProfileId).collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
       savedDecks = [];
       snap.forEach(function(doc) {
@@ -1482,6 +1488,7 @@ window.onload = function() {
 
   window.deleteSavedDeck = function(did, name) {
     requireAuth(function() {
+      if (!activeProfileId) return;
       db.collection('profiles').doc(activeProfileId).collection('decks').doc(did).delete().then(function(){
         toast('Deleted: ' + name);
       }).catch(function(e){ toast('Delete failed'); });
@@ -1524,7 +1531,7 @@ window.onload = function() {
     renderDeck();
   }
 
-  window.showProfileScreen = function() {
+  window._showProfileScreen = window.showProfileScreen = function() {
     document.getElementById('profileScreen').classList.add('active');
     loadProfiles();
   };
