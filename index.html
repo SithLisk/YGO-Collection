@@ -193,6 +193,21 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .sort-icon { font-size: 8px; margin-left: 4px; opacity: 0.5; }
 .sort-icon.asc::after  { content: ' ▲'; opacity: 1; color: var(--gold); }
 .sort-icon.desc::after { content: ' ▼'; opacity: 1; color: var(--gold); }
+.tab-nav { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+.tab-btn { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 12px 28px; background: none; border: none; color: var(--silver-dim); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.2s, border-color 0.2s; }
+.tab-btn:hover { color: var(--gold-pale); }
+.tab-btn.active { color: var(--gold); border-bottom-color: var(--gold); }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.saved-decks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; padding: 20px 0; }
+.saved-deck-card { background: rgba(20,4,4,0.8); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s; position: relative; }
+.saved-deck-card:hover { border-color: rgba(240,192,64,0.4); box-shadow: 0 0 16px rgba(160,30,30,0.3); }
+.saved-deck-name { font-family: 'Cinzel', serif; font-size: 14px; color: var(--gold-pale); margin-bottom: 8px; letter-spacing: 1px; }
+.saved-deck-meta { font-size: 12px; color: var(--silver-dim); display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.saved-deck-meta span { display: flex; align-items: center; gap: 4px; }
+.saved-deck-date { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; color: var(--silver-dim); margin-top: 4px; }
+.saved-deck-actions { display: flex; gap: 8px; margin-top: 12px; }
+.deck-empty { text-align: center; padding: 60px 20px; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
 .coll-filter-opt { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; color: var(--silver); transition: background 0.15s, color 0.15s; border-bottom: 1px solid rgba(180,40,40,0.12); }
 .coll-filter-opt:last-child { border-bottom: none; }
 .coll-filter-opt:hover { background: rgba(160,30,30,0.25); color: var(--gold-pale); }
@@ -326,6 +341,14 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     </div>
   </div>
 
+  <!-- Tab Navigation -->
+  <div class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('collection')" id="tab-collection">&#9876; Collection</button>
+    <button class="tab-btn" onclick="switchTab('decks')" id="tab-decks">&#x2261; Saved Decks</button>
+  </div>
+
+  <!-- Collection Tab -->
+  <div class="tab-pane active" id="pane-collection">
   <div class="coll-panel">
     <div class="panel-hdr">
       <div style="position:relative;display:inline-block">
@@ -389,7 +412,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span id="deckTotalCount" style="font-family:'Cinzel',serif;font-size:11px;color:var(--silver-dim);letter-spacing:1px">0 / 40+ cards</span>
         <input type="text" id="deckName" placeholder="Deck name..." style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:6px 12px;outline:none;width:180px">
-        <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export Deck List</button>
+        <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
+        <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export .ydk</button>
         <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
       </div>
     </div>
@@ -1320,6 +1344,146 @@ window.onload = function() {
 
   // Init deck render
   renderDeck();
+
+  // ── Tab switching ─────────────────────────────────────────
+  window.switchTab = function(tab) {
+    ['collection','decks'].forEach(function(t) {
+      document.getElementById('pane-' + t).classList.toggle('active', t === tab);
+      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+    });
+    if (tab === 'decks') renderSavedDecks();
+  };
+
+  // ── Save deck to Firestore ─────────────────────────────────
+  window.saveDeck = function() {
+    var name = document.getElementById('deckName').value.trim();
+    if (!name) { toast('Please enter a deck name first'); return; }
+    var mainCount = deck.main.reduce(function(s,d){ return s+d.qty; },0);
+    if (mainCount < 1) { toast('Deck is empty'); return; }
+    requireAuth(function() {
+      var deckData = {
+        name: name,
+        main:  deck.main.map(function(d){ return {fid:d.fid, name:d.name, type:d.type, qty:d.qty}; }),
+        extra: deck.extra.map(function(d){ return {fid:d.fid, name:d.name, type:d.type, qty:d.qty}; }),
+        side:  deck.side.map(function(d){ return {fid:d.fid, name:d.name, type:d.type, qty:d.qty}; }),
+        mainCount:  deck.main.reduce(function(s,d){ return s+d.qty; },0),
+        extraCount: deck.extra.reduce(function(s,d){ return s+d.qty; },0),
+        sideCount:  deck.side.reduce(function(s,d){ return s+d.qty; },0),
+        savedAt: Date.now()
+      };
+      db.collection('decks').add(deckData).then(function() {
+        toast('Deck saved: ' + name);
+      }).catch(function(e){ toast('Save failed: ' + e.message); });
+    });
+  };
+
+  // ── Load saved decks from Firestore ───────────────────────
+  var savedDecks = [];
+  function loadSavedDecks() {
+    db.collection('decks').orderBy('savedAt','desc').onSnapshot(function(snap) {
+      savedDecks = [];
+      snap.forEach(function(doc) {
+        savedDecks.push(Object.assign({ did: doc.id }, doc.data()));
+      });
+      var countEl = document.getElementById('savedDeckCount');
+      if (countEl) countEl.textContent = savedDecks.length + ' deck' + (savedDecks.length !== 1 ? 's' : '');
+      if (document.getElementById('pane-decks').classList.contains('active')) renderSavedDecks();
+    });
+  }
+  loadSavedDecks();
+
+  function renderSavedDecks() {
+    var grid = document.getElementById('savedDecksGrid');
+    if (!savedDecks.length) {
+      grid.innerHTML = '<div class="deck-empty">No saved decks yet — build one in the Collection tab</div>';
+      return;
+    }
+    grid.innerHTML = '';
+    savedDecks.forEach(function(d) {
+      var card = document.createElement('div');
+      card.className = 'saved-deck-card';
+
+      var nameEl = document.createElement('div');
+      nameEl.className = 'saved-deck-name';
+      nameEl.textContent = d.name;
+      card.appendChild(nameEl);
+
+      var meta = document.createElement('div');
+      meta.className = 'saved-deck-meta';
+      meta.innerHTML = '<span>Main: <b style="color:var(--gold-pale)">' + (d.mainCount||0) + '</b></span>'
+        + '<span>Extra: <b style="color:var(--gold-pale)">' + (d.extraCount||0) + '</b></span>'
+        + '<span>Side: <b style="color:var(--gold-pale)">' + (d.sideCount||0) + '</b></span>';
+      card.appendChild(meta);
+
+      var date = document.createElement('div');
+      date.className = 'saved-deck-date';
+      date.textContent = d.savedAt ? new Date(d.savedAt).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '';
+      card.appendChild(date);
+
+      var actions = document.createElement('div');
+      actions.className = 'saved-deck-actions';
+
+      var loadBtn = document.createElement('button');
+      loadBtn.className = 'btn btn-gold';
+      loadBtn.style.cssText = 'padding:6px 14px;font-size:9px';
+      loadBtn.textContent = 'Load into Builder';
+      loadBtn.onclick = function(e){ e.stopPropagation(); loadDeckIntoBuilder(d); };
+      actions.appendChild(loadBtn);
+
+      var expBtn = document.createElement('button');
+      expBtn.className = 'btn';
+      expBtn.style.cssText = 'padding:6px 14px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)';
+      expBtn.textContent = 'Export .ydk';
+      expBtn.onclick = function(e){ e.stopPropagation(); exportSavedDeck(d); };
+      actions.appendChild(expBtn);
+
+      var delBtn = document.createElement('button');
+      delBtn.className = 'btn';
+      delBtn.style.cssText = 'padding:6px 10px;font-size:9px;background:rgba(160,30,30,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3)';
+      delBtn.textContent = 'Delete';
+      delBtn.onclick = function(e){ e.stopPropagation(); deleteSavedDeck(d.did, d.name); };
+      actions.appendChild(delBtn);
+
+      card.appendChild(actions);
+      grid.appendChild(card);
+    });
+  }
+
+  window.loadDeckIntoBuilder = function(d) {
+    deck.main  = (d.main  || []).slice();
+    deck.extra = (d.extra || []).slice();
+    deck.side  = (d.side  || []).slice();
+    document.getElementById('deckName').value = d.name;
+    renderDeck();
+    switchTab('collection');
+    // Scroll to deck builder
+    setTimeout(function(){
+      document.querySelector('.deck-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    toast('Loaded: ' + d.name);
+  };
+
+  window.deleteSavedDeck = function(did, name) {
+    requireAuth(function() {
+      db.collection('decks').doc(did).delete().then(function(){
+        toast('Deleted: ' + name);
+      }).catch(function(e){ toast('Delete failed'); });
+    });
+  };
+
+  window.exportSavedDeck = function(d) {
+    var lines = ['# ' + d.name, '# Exported from Scott\'s YGO Collection Tracker', '', '#main'];
+    (d.main||[]).forEach(function(c){ for(var i=0;i<c.qty;i++) lines.push(c.name); });
+    lines.push('', '#extra');
+    (d.extra||[]).forEach(function(c){ for(var i=0;i<c.qty;i++) lines.push(c.name); });
+    lines.push('', '#side');
+    (d.side||[]).forEach(function(c){ for(var i=0;i<c.qty;i++) lines.push(c.name); });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')],{type:'text/plain'}));
+    a.download = d.name.replace(/[^a-z0-9]/gi,'_') + '.ydk';
+    a.click();
+    toast('Exported: ' + d.name);
+  };
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
