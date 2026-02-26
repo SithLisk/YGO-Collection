@@ -30,6 +30,7 @@ body {
   font-family: 'Crimson Pro', Georgia, serif;
   min-height: 100vh;
   overflow-x: hidden;
+  width: 100%;
 }
 .page-bg {
   position: fixed; inset: 0; z-index: 0; pointer-events: none;
@@ -53,7 +54,7 @@ body::before {
     radial-gradient(1px 1px at 80% 15%, rgba(255,255,255,0.3) 0%, transparent 100%),
     radial-gradient(1.5px 1.5px at 50% 80%, rgba(240,192,64,0.5) 0%, transparent 100%);
 }
-.wrap { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 0 24px 60px; }
+.wrap { position: relative; z-index: 1; width: 100%; padding: 0 24px 60px; }
 
 header { text-align: center; padding: 48px 0 32px; border-bottom: 1px solid var(--border); margin-bottom: 32px; position: relative; }
 header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transform: translateX(-50%); width: 200px; height: 2px; background: linear-gradient(90deg, transparent, var(--gold), transparent); }
@@ -123,7 +124,7 @@ input[type="text"]::placeholder { color: var(--silver-dim); }
 
 .entry-form { display: none; margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; gap: 16px; flex-wrap: wrap; }
 .entry-form.open { display: flex; }
-.field { display: flex; flex-direction: column; gap: 6px; min-width: 110px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver-dim); }
 .field select, .field input { background: rgba(12,3,3,0.8); border: 1px solid var(--border); border-radius: 8px; color: var(--white); font-family: 'Crimson Pro', serif; font-size: 15px; padding: 9px 12px; outline: none; transition: border-color 0.2s; width: 100%; }
 .field select:focus, .field input:focus { border-color: var(--accent); }
@@ -137,21 +138,21 @@ input[type="text"]::placeholder { color: var(--silver-dim); }
 .btn-del { font-family: 'Cinzel', serif; font-size: 10px; background: rgba(192,57,43,0.2); color: #e07070; border: 1px solid rgba(192,57,43,0.3); border-radius: 6px; padding: 7px 14px; cursor: pointer; transition: background 0.2s; }
 .btn-del:hover { background: rgba(192,57,43,0.4); }
 
-.coll-panel { background: linear-gradient(135deg, rgba(35,5,5,0.85), rgba(8,4,4,0.9)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--glow); }
+.coll-panel { background: linear-gradient(135deg, rgba(35,5,5,0.85), rgba(8,4,4,0.9)); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; box-shadow: var(--glow); width: 100%; box-sizing: border-box; }
 .panel-hdr { display: flex; justify-content: space-between; align-items: center; padding: 20px 28px; border-bottom: 1px solid var(--border); background: rgba(15,3,3,0.5); flex-wrap: wrap; gap: 12px; }
 .panel-ttl { font-family: 'Cinzel', serif; font-size: 13px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
 .stats-row { display: flex; gap: 24px; }
 .stat { text-align: center; }
 .stat-n { font-family: 'Cinzel Decorative', serif; font-size: 18px; color: var(--gold-pale); display: block; }
 .stat-l { font-family: 'Cinzel', serif; font-size: 8px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
-.tbl-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-thead th { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver-dim); padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; background: rgba(10,2,2,0.4); }
+.tbl-wrap { overflow: hidden; width: 100%; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+thead th { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 0; text-transform: uppercase; color: var(--silver-dim); padding: 8px 8px; text-align: left; border-bottom: 1px solid var(--border); overflow: hidden; text-overflow: ellipsis; background: rgba(10,2,2,0.4); }
 tbody tr { border-bottom: 1px solid rgba(180,40,40,0.1); transition: background 0.15s; }
 tbody tr:hover { background: rgba(160,30,30,0.08); }
 tbody tr:last-child { border-bottom: none; }
-td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
-.td-nm { font-size: 15px; font-weight: 600; color: var(--white); min-width: 160px; }
+td { padding: 7px 8px; vertical-align: middle; color: var(--silver); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 0; }
+.td-nm { font-size: 15px; font-weight: 600; color: var(--white); }
 .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 .dm         { background: #f4a261; }  /* generic monster - orange */
 .d-effect   { background: #f97316; }  /* effect monster - deep orange */
@@ -164,11 +165,11 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
 .d-pendulum { background: #10b981; }  /* pendulum - teal-green */
 .ds         { background: #4ecdc4; }  /* spell - teal */
 .dt         { background: #f48fb1; }  /* trap - pink */
-.td-pr { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); white-space: nowrap; }
+.td-pr { font-family: 'Cinzel', serif; font-size: 12px; color: var(--gold); }
 .td-qt { font-family: 'Cinzel Decorative', serif; font-size: 15px; color: var(--gold-pale); text-align: center; }
 .td-sm { font-size: 12px; color: var(--silver-dim); }
-.td-atk { font-family: 'Cinzel', serif; font-size: 11px; white-space: nowrap; }
-.cb { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; white-space: nowrap; }
+.td-atk { font-family: 'Cinzel', serif; font-size: 11px; }
+.cb { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
 .c0 { background: rgba(26,122,58,0.25);  color: #4ade80; border: 1px solid rgba(26,122,58,0.4); }
 .c1 { background: rgba(30,107,184,0.25); color: #60a5fa; border: 1px solid rgba(30,107,184,0.4); }
 .c2 { background: rgba(240,192,64,0.2);  color: #fcd34d; border: 1px solid rgba(240,192,64,0.3); }
@@ -298,6 +299,20 @@ td { padding: 11px 16px; vertical-align: middle; color: var(--silver); }
     </div>
     <div class="tbl-wrap">
       <table>
+        <colgroup>
+          <col style="width:15%">  <!-- Card Name -->
+          <col style="width:7%">   <!-- Type -->
+          <col style="width:7%">   <!-- Attribute -->
+          <col style="width:9%">   <!-- Archetype -->
+          <col style="width:7%">   <!-- ATK/DEF -->
+          <col style="width:12%">  <!-- Set -->
+          <col style="width:8%">   <!-- Card No. -->
+          <col style="width:9%">   <!-- Rarity -->
+          <col style="width:8%">   <!-- Condition -->
+          <col style="width:7%">   <!-- Edition -->
+          <col style="width:4%">   <!-- Qty -->
+          <col style="width:7%">   <!-- delete -->
+        </colgroup>
         <thead><tr id="tableHeaders">
           <th onclick="sortBy('name')"      class="sortable">Card Name <span class="sort-icon" id="si-name"></span></th>
           <th onclick="sortBy('type')"      class="sortable">Type <span class="sort-icon" id="si-type"></span></th>
