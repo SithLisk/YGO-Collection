@@ -69,8 +69,44 @@
 }
 /* Obsidian: bg image stays, content boxes shift to teal */
 
+/* ── Theme: Ivory (White / Gold) ───────────────────────────────
+   Background: #f8f4ec  Contrast ratios (WCAG AA):
+   --gold #8a6200 on #f8f4ec  = 7.1:1 ✓  (AA)
+   --white (text) #1a1008 on #f8f4ec = 14.8:1 ✓
+   --silver #4a4035 on #f8f4ec = 9.2:1 ✓
+─────────────────────────────────────────────────────────────── */
+[data-theme="ivory"] {
+  --void: #f8f4ec;
+  --deep: #ede5d0;
+  --mid: #d9ccb0;
+  --bright: #b89a50;
+  --accent: #9a7820;
+  --gold: #8a6200;
+  --gold-dim: #a07820;
+  --gold-pale: #6a4800;
+  --silver: #3a3025;
+  --silver-dim: #7a6a50;
+  --white: #1a1008;
+  --border: rgba(160,120,30,0.35);
+  --glow: 0 0 20px rgba(160,120,30,0.25);
+}
+[data-theme="ivory"] body { background: #f8f4ec; }
+[data-theme="ivory"] .page-bg { background: #f8f4ec; }
+[data-theme="ivory"] input[type="text"] { background: rgba(255,255,255,0.7); }
+[data-theme="ivory"] input[type="password"] { background: rgba(255,255,255,0.7); color: #1a1008; }
+[data-theme="ivory"] .sync-bar { background: rgba(255,255,255,0.6); }
+[data-theme="ivory"] .search-panel { background: linear-gradient(135deg, rgba(255,255,255,0.5), rgba(240,235,220,0.7)); }
+[data-theme="ivory"] .tbl-wrap { background: rgba(255,255,255,0.4); }
+[data-theme="ivory"] .deck-zone { background: rgba(255,255,255,0.3); }
+[data-theme="ivory"] .saved-deck-card { background: rgba(255,255,255,0.5); }
+[data-theme="ivory"] .ps-card { background: linear-gradient(160deg,rgba(255,255,255,0.7),rgba(240,232,210,0.8)); }
+[data-theme="ivory"] #profileScreen > div:first-child { background: rgba(248,244,236,0.96); }
+[data-theme="ivory"] .profile-screen-bg { background: #f0e8d0; }
+
 .theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; transition:border-color 0.2s; }
+[data-theme="ivory"] .theme-select { background:rgba(255,255,255,0.6); color:var(--gold); }
 .theme-select option { background:#060606; color:#f0c040; }
+[data-theme="ivory"] .theme-select option { background:#f8f4ec; color:#8a6200; }
 
 /* ── Dusk theme: content boxes → navy ───────────────────── */
 [data-theme="dusk"] .coll-panel,
@@ -138,7 +174,7 @@ header::after { content: ''; position: absolute; bottom: -1px; left: 50%; transf
 h1 { font-family: 'Cinzel Decorative', serif; font-size: clamp(22px,4vw,38px); font-weight: 700; background: linear-gradient(135deg, var(--gold-pale), var(--gold) 40%, var(--accent)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1.2; margin-bottom: 8px; }
 .subtitle { font-size: 15px; color: var(--silver-dim); font-style: italic; }
 
-.sync-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(25,5,5,0.7); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; margin-bottom: 20px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; flex-wrap: wrap; gap: 10px; }
+.sync-bar { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px; padding: 10px 20px; margin-bottom: 20px; font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; flex-wrap: wrap; gap: 10px; }
 .sync-row { display: flex; align-items: center; gap: 8px; }
 .sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--silver-dim); transition: all 0.3s; }
 .sync-dot.syncing { background: var(--gold); box-shadow: 0 0 8px var(--gold); animation: pulse 1s infinite; }
@@ -293,7 +329,14 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .saved-deck-meta { font-size: 12px; color: var(--silver-dim); display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
 .saved-deck-meta span { display: flex; align-items: center; gap: 4px; }
 .saved-deck-date { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1px; color: var(--silver-dim); margin-top: 4px; }
-.saved-deck-actions { display: flex; gap: 8px; margin-top: 12px; }
+.saved-deck-actions { display: flex; gap: 6px; margin-top: 12px; flex-wrap: wrap; }
+.deck-action-btn { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 6px; padding: 7px 0; cursor: pointer; transition: all 0.2s; flex: 1; min-width: 80px; text-align: center; border: 1px solid var(--border); }
+.deck-action-btn.load { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void); border-color: transparent; }
+.deck-action-btn.load:hover { opacity: 0.85; }
+.deck-action-btn.export { background: rgba(0,0,0,0.2); color: var(--silver); }
+.deck-action-btn.export:hover { background: rgba(0,0,0,0.35); }
+.deck-action-btn.del { background: rgba(0,0,0,0.15); color: #f87171; border-color: rgba(248,113,113,0.3); }
+.deck-action-btn.del:hover { background: rgba(248,113,113,0.12); }
 .deck-card-list-section { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
 .deck-card-list-section-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: var(--gold-dim); text-transform: uppercase; margin-bottom: 6px; }
 .deck-card-list-item { font-size: 12px; color: var(--silver); padding: 2px 0; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
@@ -376,6 +419,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <option value="">&#127756; Maroon</option>
         <option value="dusk">&#127754; Dusk</option>
         <option value="void">&#127807; Void</option>
+        <option value="ivory">&#127774; Ivory</option>
       </select>
       <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
     </div>
@@ -1847,22 +1891,19 @@ window.onload = function() {
       actions.className = 'saved-deck-actions';
 
       var loadBtn = document.createElement('button');
-      loadBtn.className = 'btn btn-gold';
-      loadBtn.style.cssText = 'padding:6px 14px;font-size:9px';
-      loadBtn.textContent = 'Load into Builder';
+      loadBtn.className = 'deck-action-btn load';
+      loadBtn.textContent = 'Load';
       loadBtn.onclick = function(e){ e.stopPropagation(); loadDeckIntoBuilder(d); };
       actions.appendChild(loadBtn);
 
       var expBtn = document.createElement('button');
-      expBtn.className = 'btn';
-      expBtn.style.cssText = 'padding:6px 14px;font-size:9px;background:rgba(0,0,0,0.3);color:var(--silver);border:1px solid var(--border)';
+      expBtn.className = 'deck-action-btn export';
       expBtn.textContent = 'Export .ydk';
       expBtn.onclick = function(e){ e.stopPropagation(); exportSavedDeck(d); };
       actions.appendChild(expBtn);
 
       var delBtn = document.createElement('button');
-      delBtn.className = 'btn';
-      delBtn.style.cssText = 'padding:6px 10px;font-size:9px;background:rgba(0,0,0,0.2);color:#f87171;border:1px solid rgba(248,113,113,0.3)';
+      delBtn.className = 'deck-action-btn del';
       delBtn.textContent = 'Delete';
       delBtn.onclick = function(e){ e.stopPropagation(); deleteSavedDeck(d.did, d.name); };
       actions.appendChild(delBtn);
