@@ -286,7 +286,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 
   <!-- Password modal -->
   <!-- Profile Selector Screen -->
-  <div class="profile-screen active" id="profileScreen" style="display:none;position:fixed;inset:0;background:rgba(4,1,1,0.97);z-index:2000;align-items:flex-start;justify-content:center;overflow-y:auto;padding:60px 20px 40px">
+  <div class="profile-screen active" id="profileScreen" style="position:fixed;inset:0;background:rgba(4,1,1,0.97);z-index:2000;overflow-y:auto;padding:60px 20px 40px">
     <div style="text-align:center;width:100%;max-width:860px">
       <div class="eyebrow" style="margin-bottom:8px">Yu-Gi-Oh! Collection Tracker</div>
       <h2 style="font-family:'Cinzel',serif;font-size:22px;color:var(--gold-pale);letter-spacing:4px;margin-bottom:6px">SELECT PROFILE</h2>
@@ -1540,12 +1540,11 @@ window.onload = function() {
     activeProfileName = profileName;
     localStorage.setItem('activeProfileId', profileId);
     localStorage.setItem('activeProfileName', profileName);
-    // Update header label
-    var lbl = document.getElementById('activeProfileLabel');
-    if (lbl) lbl.textContent = profileName;
+    // label updated above
     // Hide profile screen, show app
     var ps = document.getElementById('profileScreen');
     if (ps) { ps.classList.remove('active'); ps.style.display = 'none'; }
+    document.getElementById('activeProfileLabel').textContent = profileName;
     // Start scoped listeners
     authed = false;
     updateLockBtn();
@@ -1558,9 +1557,9 @@ window.onload = function() {
 
   window._showProfileScreen = window.showProfileScreen = function() {
     var ps = document.getElementById('profileScreen');
-    if (!ps) return;
-    ps.classList.add('active');
+    if (!ps) { console.error('profileScreen element not found'); return; }
     ps.style.display = 'flex';
+    ps.classList.add('active');
     loadProfiles();
   };
 
@@ -1569,6 +1568,9 @@ window.onload = function() {
     grid.innerHTML = '<div style="color:var(--silver-dim);font-family:Cinzel,serif;font-size:11px;letter-spacing:2px">Loading...</div>';
     db.collection('profiles').orderBy('createdAt','asc').get().then(function(snap) {
       grid.innerHTML = '';
+      if (snap.empty) {
+        grid.innerHTML = '<div style="text-align:center;padding:30px 0;color:var(--silver-dim);font-family:Cinzel,serif;font-size:11px;letter-spacing:2px;grid-column:1/-1">No profiles yet — create one below</div>';
+      }
       snap.forEach(function(doc) {
         var p = doc.data();
         var initial = (p.name || '?')[0].toUpperCase();
@@ -1599,10 +1601,8 @@ window.onload = function() {
       newCard.innerHTML = '<div class="profile-avatar" style="font-size:28px;border-style:dashed">+</div>'
         + '<div class="profile-name">New Profile</div>';
       newCard.onclick = function() {
-        requireAuth(function() {
-          document.getElementById('newProfileModal').style.display = 'flex';
-          setTimeout(function(){ document.getElementById('newProfileName').focus(); }, 50);
-        });
+        document.getElementById('newProfileModal').style.display = 'flex';
+        setTimeout(function(){ document.getElementById('newProfileName').focus(); }, 50);
       };
       grid.appendChild(newCard);
     }).catch(function(e) {
