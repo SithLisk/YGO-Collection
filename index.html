@@ -199,6 +199,37 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .coll-filter-opt.active { color: var(--gold); background: rgba(160,30,30,0.15); }
 .card-link { cursor: pointer; border-bottom: 1px dotted rgba(240,192,64,0.4); transition: color 0.15s, border-color 0.15s; }
 .card-link:hover { color: var(--gold-pale); border-bottom-color: var(--gold); }
+.td-thumb { width: 32px; padding: 4px 6px; }
+.td-thumb img { width: 28px; height: 40px; object-fit: cover; border-radius: 3px; display: block; border: 1px solid rgba(240,192,64,0.2); cursor: pointer; transition: transform 0.15s; }
+.td-thumb img:hover { transform: scale(1.08); }
+.qty-ctrl { display: flex; align-items: center; gap: 4px; justify-content: center; }
+.qty-btn { font-family: 'Cinzel',serif; font-size: 13px; width: 22px; height: 22px; border-radius: 4px; border: 1px solid var(--border); background: rgba(160,30,30,0.2); color: var(--gold-pale); cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.15s; padding: 0; }
+.qty-btn:hover { background: rgba(160,30,30,0.5); }
+.qty-val { font-family: 'Cinzel Decorative',serif; font-size: 14px; color: var(--gold-pale); min-width: 18px; text-align: center; }
+.rarity-breakdown { display: flex; gap: 14px; flex-wrap: wrap; padding: 12px 28px; border-top: 1px solid var(--border); background: rgba(10,2,2,0.3); align-items: center; }
+.rar-stat { display: flex; align-items: center; gap: 6px; font-family: 'Cinzel',serif; font-size: 10px; letter-spacing: 1px; }
+.rar-stat-n { font-size: 14px; font-weight: 700; }
+.deck-section { background: linear-gradient(135deg, rgba(35,5,5,0.9), rgba(8,4,4,0.95)); border: 1px solid var(--border); border-radius: 16px; margin-top: 28px; box-shadow: var(--glow); overflow: hidden; }
+.deck-hdr { display: flex; justify-content: space-between; align-items: center; padding: 18px 28px; border-bottom: 1px solid var(--border); background: rgba(15,3,3,0.5); flex-wrap: wrap; gap: 12px; }
+.deck-ttl { font-family: 'Cinzel',serif; font-size: 13px; letter-spacing: 3px; color: var(--gold); text-transform: uppercase; }
+.deck-zones { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0; }
+@media(max-width:700px){ .deck-zones { grid-template-columns: 1fr; } }
+.deck-zone { border-right: 1px solid var(--border); min-height: 160px; }
+.deck-zone:last-child { border-right: none; }
+.deck-zone-hdr { font-family: 'Cinzel',serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: rgba(10,2,2,0.3); }
+.deck-zone-count { font-size: 14px; color: var(--gold-pale); }
+.deck-zone-count.warn { color: #f87171; }
+.deck-zone-count.ok   { color: #4ade80; }
+.deck-card-list { padding: 8px; display: flex; flex-direction: column; gap: 4px; min-height: 120px; }
+.deck-card-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 8px; background: rgba(160,30,30,0.1); border: 1px solid rgba(180,40,40,0.2); border-radius: 6px; font-size: 13px; gap: 8px; }
+.deck-card-item:hover { background: rgba(160,30,30,0.2); }
+.deck-card-name { flex: 1; color: var(--silver); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.deck-card-name:hover { color: var(--gold-pale); }
+.deck-card-qty { font-family: 'Cinzel',serif; font-size: 11px; color: var(--gold-dim); white-space: nowrap; }
+.deck-card-rm  { background: none; border: none; color: var(--silver-dim); cursor: pointer; font-size: 14px; padding: 0 2px; line-height: 1; }
+.deck-card-rm:hover { color: #f87171; }
+.deck-drop-target { border: 2px dashed rgba(180,40,40,0.3); border-radius: 6px; padding: 16px; text-align: center; color: var(--silver-dim); font-family: 'Cinzel',serif; font-size: 10px; letter-spacing: 2px; margin: 8px; }
+.deck-search-row { padding: 12px 28px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .toast { position: fixed; bottom: 32px; right: 32px; background: rgba(20,5,5,0.98); border: 1px solid var(--accent); border-radius: 10px; padding: 14px 20px; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold-pale); box-shadow: var(--glow); transform: translateY(80px); opacity: 0; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1); z-index: 999; }
 .toast.show { transform: translateY(0); opacity: 1; }
 </style>
@@ -324,6 +355,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <div class="tbl-wrap">
       <table>
         <thead><tr id="tableHeaders">
+          <th style="width:36px"></th>
           <th onclick="sortBy('name')"      class="sortable" style="min-width:160px">Card Name <span class="sort-icon" id="si-name"></span></th>
           <th onclick="sortBy('type')"      class="sortable">Type <span class="sort-icon" id="si-type"></span></th>
           <th onclick="sortBy('attribute')" class="sortable">Attribute <span class="sort-icon" id="si-attribute"></span></th>
@@ -338,12 +370,56 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <th></th>
         </tr></thead>
         <tbody id="collBody">
-          <tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
+          <tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
         </tbody>
       </table>
     </div>
+    <div class="rarity-breakdown" id="rarityBreakdown"></div>
     <div class="exp-bar">
       <button class="btn btn-gold" onclick="exportCSV()">&#8595; Export CSV for Excel</button>
+    </div>
+  </div>
+
+  <!-- Deck Builder -->
+  <div class="deck-section">
+    <div class="deck-hdr">
+      <div class="deck-ttl">&#9876; Deck Builder</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <span id="deckTotalCount" style="font-family:'Cinzel',serif;font-size:11px;color:var(--silver-dim);letter-spacing:1px">0 / 40+ cards</span>
+        <input type="text" id="deckName" placeholder="Deck name..." style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:6px 12px;outline:none;width:180px">
+        <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export Deck List</button>
+        <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
+      </div>
+    </div>
+    <div class="deck-search-row" style="position:relative">
+      <span style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:2px;color:var(--silver-dim);text-transform:uppercase">Add from collection:</span>
+      <input type="text" id="deckSearch" placeholder="Search your collection..." autocomplete="off"
+        style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:7px 12px;outline:none;width:240px"
+        oninput="filterDeckSearch()">
+      <div id="deckSearchResults" style="display:none;position:absolute;margin-top:36px;background:#1a0505;border:1px solid var(--border);border-radius:10px;max-height:200px;overflow-y:auto;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);min-width:280px"></div>
+    </div>
+    <div class="deck-zones">
+      <div class="deck-zone">
+        <div class="deck-zone-hdr">
+          <span>Main Deck</span>
+          <span class="deck-zone-count" id="mainCount">0</span>
+        </div>
+        <div class="deck-card-list" id="mainDeck"></div>
+      </div>
+      <div class="deck-zone">
+        <div class="deck-zone-hdr">
+          <span>Extra Deck</span>
+          <span class="deck-zone-count" id="extraCount">0</span>
+        </div>
+        <div class="deck-card-list" id="extraDeck"></div>
+      </div>
+      <div class="deck-zone">
+        <div class="deck-zone-hdr">
+          <span>Side Deck</span>
+          <span class="deck-zone-count" id="sideCount">0</span>
+        </div>
+        <div class="deck-card-list" id="sideDeck"></div>
+      </div>
     </div>
   </div>
 
@@ -703,6 +779,7 @@ window.onload = function() {
     sync('syncing','Saving...');
     col.add({
       name: c.name, type: c.type, race: c.race||'—', level: c.level||c.linkval||null,
+      cardImageId: (c.card_images && c.card_images.length ? c.card_images[0].id : null),
       attribute: c.attribute||'—',
       archetype: c.archetype||'—',
       atk: c.atk!==undefined ? (c.atk===-1?'?':String(c.atk)) : '—',
@@ -726,9 +803,33 @@ window.onload = function() {
   // Remove card
   window.removeEntry = function(id) {
     requireAuth(function() {
+      // Find card data before deleting for undo
+      var card = cards.find(function(c){ return c.fid === id; });
       sync('syncing','Removing...');
-      db.collection('cards').doc(id).delete().catch(function(e) { sync('error','Delete failed'); });
+      db.collection('cards').doc(id).delete().then(function() {
+        if (!card) return;
+        // Show undo toast
+        var t = document.getElementById('toast');
+        t.innerHTML = esc(card.name) + ' removed &nbsp;<button onclick="undoDelete()" style="font-family:Cinzel,serif;font-size:10px;letter-spacing:1px;background:rgba(240,192,64,0.2);color:var(--gold);border:1px solid rgba(240,192,64,0.4);border-radius:4px;padding:3px 10px;cursor:pointer;margin-left:4px">UNDO</button>';
+        t.classList.add('show');
+        clearTimeout(window._toastTimer);
+        window._undoCard = card;
+        window._toastTimer = setTimeout(function(){
+          t.classList.remove('show');
+          window._undoCard = null;
+        }, 5000);
+      }).catch(function(e) { sync('error','Delete failed'); });
     });
+  };
+
+  window.undoDelete = function() {
+    if (!window._undoCard) return;
+    var card = window._undoCard;
+    window._undoCard = null;
+    clearTimeout(window._toastTimer);
+    document.getElementById('toast').classList.remove('show');
+    delete card.fid;
+    col.add(card).catch(function(e){ toast('Undo failed: ' + e.message); });
   };
 
   // Collection type dropdown
@@ -846,7 +947,7 @@ window.onload = function() {
   function renderTable() {
     var tbody = document.getElementById('collBody');
     if (!cards.length) {
-      tbody.innerHTML = '<tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
       updateStats(); return;
     }
     var h = '';
@@ -856,6 +957,9 @@ window.onload = function() {
       var tot = (e.qty||0)*(e.price||0);
       h += '<tr>';
       var nameClick = 'openCardModal(' + JSON.stringify(e.name) + ')';
+      var imgId = e.cardImageId || '';
+      var thumbSrc = imgId ? 'https://images.ygoprodeck.com/images/cards_small/' + imgId + '.jpg' : '';
+      h += '<td class="td-thumb">' + (thumbSrc ? '<img src="' + thumbSrc + '" alt="" onclick="' + esc(nameClick) + '" onerror="this.style.display='none'">' : '') + '</td>';
       h += '<td class="td-nm"><span class="dot ' + dc + '"></span><span class="card-link" onclick="' + esc(nameClick) + '">' + esc(e.name) + '</span></td>';
       h += '<td class="td-sm">' + esc(getTypeDisplay(e)) + '</td>';
       h += '<td class="td-sm">' + attrBadge(e.attribute) + '</td>';
@@ -873,7 +977,7 @@ window.onload = function() {
       h += '<td class="rtxt ' + rClass(e.rarity) + '">' + esc(e.rarity) + '</td>';
       h += '<td><span class="cb ' + cClass(e.condition) + '">' + esc(e.condition) + '</span></td>';
       h += '<td class="td-sm">' + esc(e.edition) + '</td>';
-      h += '<td class="td-qt">' + (e.qty||0) + '</td>';
+      h += '<td style="padding:4px 8px"><div class="qty-ctrl"><button class="qty-btn" onclick="adjustQty(\''+e.fid+'\', -1)">&#8722;</button><span class="qty-val">'+(e.qty||0)+'</span><button class="qty-btn" onclick="adjustQty(\''+e.fid+'\', 1)">+</button></div></td>';
       h += '<td><button class="btn-del" onclick="removeEntry(\'' + e.fid + '\')">X</button></td>';
       h += '</tr>';
     });
@@ -887,6 +991,25 @@ window.onload = function() {
       ? visible.length + ' / ' + cards.length
       : cards.length;
     document.getElementById('statTotal').textContent = visible.reduce(function(s,e){return s+(e.qty||0);},0);
+    // Rarity breakdown
+    var rarOrder = ['Secret Rare','Prismatic Secret Rare','Starlight Rare','Quarter Century Secret Rare','Ghost Rare','Ultra Rare','Super Rare','Rare','Common'];
+    var rarColors = {'Secret Rare':'#e879f9','Prismatic Secret Rare':'#f0abfc','Starlight Rare':'#fde68a','Quarter Century Secret Rare':'#fcd34d','Ghost Rare':'#e2e8f0','Ultra Rare':'#fcd34d','Super Rare':'#c4b5fd','Rare':'#93c5fd','Common':'#6b5f7a'};
+    var counts = {};
+    cards.forEach(function(e){
+      var r = e.rarity || 'Common';
+      counts[r] = (counts[r]||0) + (e.qty||1);
+    });
+    var html = '<span style="font-family:Cinzel,serif;font-size:9px;letter-spacing:2px;color:var(--silver-dim);text-transform:uppercase;margin-right:4px">Rarities:</span>';
+    rarOrder.forEach(function(r){
+      if (!counts[r]) return;
+      var c = rarColors[r] || 'var(--silver)';
+      html += '<span class="rar-stat"><span class="rar-stat-n" style="color:'+c+'">'+counts[r]+'</span><span style="color:var(--silver-dim);font-size:9px">'+r+'</span></span>';
+    });
+    // Any unlisted rarities
+    Object.keys(counts).forEach(function(r){
+      if (rarOrder.indexOf(r) === -1) html += '<span class="rar-stat"><span class="rar-stat-n" style="color:var(--silver)">'+counts[r]+'</span><span style="color:var(--silver-dim);font-size:9px">'+r+'</span></span>';
+    });
+    document.getElementById('rarityBreakdown').innerHTML = html;
   }
 
   // Export
@@ -1023,6 +1146,132 @@ window.onload = function() {
     document.getElementById('cardModal').style.display = 'none';
     document.getElementById('modalImg').src = '';
   };
+
+  // Qty adjust
+  window.adjustQty = function(id, delta) {
+    requireAuth(function() {
+      var card = cards.find(function(c){ return c.fid === id; });
+      if (!card) return;
+      var newQty = Math.max(1, (card.qty||1) + delta);
+      db.collection('cards').doc(id).update({ qty: newQty }).catch(function(e){ toast('Update failed'); });
+    });
+  };
+
+  // ── Deck Builder ───────────────────────────────────────────
+  var deck = { main: [], extra: [], side: [] };
+
+  var extraTypes = ['fusion','synchro','xyz','link'];
+  function getDeckZone(type) {
+    var t = (type||'').toLowerCase();
+    for (var i=0; i<extraTypes.length; i++) { if (t.indexOf(extraTypes[i]) !== -1) return 'extra'; }
+    return 'main';
+  }
+
+  window.filterDeckSearch = function() {
+    var q = document.getElementById('deckSearch').value.trim().toLowerCase();
+    var res = document.getElementById('deckSearchResults');
+    if (q.length < 2) { res.style.display = 'none'; return; }
+    var matches = cards.filter(function(c){ return c.name.toLowerCase().indexOf(q) !== -1; }).slice(0, 12);
+    if (!matches.length) { res.style.display = 'none'; return; }
+    res.innerHTML = matches.map(function(c) {
+      return '<div style="padding:8px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid rgba(180,40,40,0.12);color:var(--silver);display:flex;justify-content:space-between;align-items:center" onmouseover="this.style.background='rgba(160,30,30,0.25)'" onmouseout="this.style.background=''" onclick="addToDeck('+JSON.stringify(c.fid)+','main')">'
+        + esc(c.name)
+        + '<span style="display:flex;gap:6px">'
+        + '<button style="font-family:Cinzel,serif;font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(180,40,40,0.4);background:rgba(160,30,30,0.2);color:var(--gold-pale);cursor:pointer" onclick="event.stopPropagation();addToDeck('+JSON.stringify(c.fid)+','main')">Main</button>'
+        + '<button style="font-family:Cinzel,serif;font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(180,40,40,0.4);background:rgba(160,30,30,0.2);color:var(--gold-pale);cursor:pointer" onclick="event.stopPropagation();addToDeck('+JSON.stringify(c.fid)+','extra')">Extra</button>'
+        + '<button style="font-family:Cinzel,serif;font-size:8px;padding:2px 7px;border-radius:4px;border:1px solid rgba(180,40,40,0.4);background:rgba(160,30,30,0.2);color:var(--gold-pale);cursor:pointer" onclick="event.stopPropagation();addToDeck('+JSON.stringify(c.fid)+','side')">Side</button>'
+        + '</span></div>';
+    }).join('');
+    res.style.display = 'block';
+    res.style.position = 'absolute';
+  };
+
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.deck-search-row')) {
+      document.getElementById('deckSearchResults').style.display = 'none';
+    }
+  });
+
+  window.addToDeck = function(fid, zone) {
+    var card = cards.find(function(c){ return c.fid === fid; });
+    if (!card) return;
+    // Max 3 copies per card across all zones (1 for limited)
+    var totalCopies = ['main','extra','side'].reduce(function(s,z){
+      return s + deck[z].filter(function(d){ return d.fid === fid; }).reduce(function(s2,d){ return s2+d.qty; }, 0);
+    }, 0);
+    if (totalCopies >= 3) { toast('Max 3 copies of ' + card.name); return; }
+    var existing = deck[zone].find(function(d){ return d.fid === fid; });
+    if (existing) { existing.qty++; } else { deck[zone].push({ fid: fid, name: card.name, type: card.type, qty: 1 }); }
+    document.getElementById('deckSearch').value = '';
+    document.getElementById('deckSearchResults').style.display = 'none';
+    renderDeck();
+  };
+
+  window.removeDeckCard = function(fid, zone) {
+    var idx = deck[zone].findIndex(function(d){ return d.fid === fid; });
+    if (idx === -1) return;
+    if (deck[zone][idx].qty > 1) { deck[zone][idx].qty--; } else { deck[zone].splice(idx, 1); }
+    renderDeck();
+  };
+
+  function renderDeck() {
+    ['main','extra','side'].forEach(function(zone) {
+      var el = document.getElementById(zone + 'Deck');
+      var count = deck[zone].reduce(function(s,d){ return s+d.qty; }, 0);
+      var countEl = document.getElementById(zone + 'Count');
+      countEl.textContent = count;
+      if (zone === 'main') {
+        countEl.className = 'deck-zone-count' + (count >= 40 && count <= 60 ? ' ok' : count > 0 ? ' warn' : '');
+      } else if (zone === 'extra') {
+        countEl.className = 'deck-zone-count' + (count <= 15 ? '' : ' warn');
+      } else {
+        countEl.className = 'deck-zone-count' + (count <= 15 ? '' : ' warn');
+      }
+      if (!deck[zone].length) {
+        el.innerHTML = '<div class="deck-drop-target">Search above to add cards</div>';
+      } else {
+        el.innerHTML = deck[zone].map(function(d) {
+          return '<div class="deck-card-item">'
+            + '<span class="deck-card-name" onclick="openCardModal('+JSON.stringify(d.name)+')">' + esc(d.name) + '</span>'
+            + '<span class="deck-card-qty">x' + d.qty + '</span>'
+            + '<button class="deck-card-rm" onclick="removeDeckCard('+JSON.stringify(d.fid)+',''+zone+'')" title="Remove one">&#8722;</button>'
+            + '</div>';
+        }).join('');
+      }
+    });
+    var total = ['main','extra','side'].reduce(function(s,z){ return s + deck[z].reduce(function(s2,d){ return s2+d.qty; },0); }, 0);
+    var mainCount = deck.main.reduce(function(s,d){ return s+d.qty; },0);
+    document.getElementById('deckTotalCount').textContent = total + ' cards (Main: ' + mainCount + (mainCount >= 40 ? ' ✓' : ' / 40 min') + ')';
+  }
+
+  window.exportDeck = function() {
+    var name = document.getElementById('deckName').value || 'My Deck';
+    var lines = ['# ' + name, '# Exported from Scott's YGO Collection Tracker', ''];
+    var mainCount = deck.main.reduce(function(s,d){ return s+d.qty; },0);
+    if (mainCount < 40) { toast('Main deck needs at least 40 cards (' + mainCount + '/40)'); return; }
+    lines.push('#main');
+    deck.main.forEach(function(d){ for(var i=0;i<d.qty;i++) lines.push(d.name); });
+    lines.push('');
+    lines.push('#extra');
+    deck.extra.forEach(function(d){ for(var i=0;i<d.qty;i++) lines.push(d.name); });
+    lines.push('');
+    lines.push('#side');
+    deck.side.forEach(function(d){ for(var i=0;i<d.qty;i++) lines.push(d.name); });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/plain'}));
+    a.download = name.replace(/[^a-z0-9]/gi,'_') + '.ydk';
+    a.click();
+    toast('Deck exported as .ydk!');
+  };
+
+  window.clearDeck = function() {
+    deck = { main: [], extra: [], side: [] };
+    renderDeck();
+    toast('Deck cleared');
+  };
+
+  // Init deck render
+  renderDeck();
 
   function esc(s) {
     return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
