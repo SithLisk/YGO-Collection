@@ -383,6 +383,10 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .deck-card-list-item .qty-tag { font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold-dim); flex-shrink: 0; margin-left: 8px; }
 .deck-empty { text-align: center; padding: 60px 20px; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
 
+/* ── Wishlist ──────────────────────────────────────────────── */
+.wishlist-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+.wishlist-card:hover { border-color: rgba(240,192,64,0.4); box-shadow: 0 0 16px rgba(160,30,30,0.3); }
+
 /* ── Deck Suggestions ──────────────────────────────────────── */
 .suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; padding: 20px 0; }
 .suggestion-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s, box-shadow 0.2s; }
@@ -627,6 +631,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('collection')" id="tab-collection">&#9876; Collection</button>
     <button class="tab-btn" onclick="switchTab('decks')" id="tab-decks">&#x2261; Saved Decks</button>
+    <button class="tab-btn" onclick="switchTab('wishlist')" id="tab-wishlist">&#9733; Wishlist</button>
     <button class="tab-btn" onclick="switchTab('suggestions')" id="tab-suggestions">&#x1F4A1; Deck Suggestions</button>
   </div>
 
@@ -768,6 +773,19 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         </div>
       </div>
       <div class="saved-decks-grid" id="savedDecksGrid"></div>
+    </div>
+  </div>
+
+  <!-- Wishlist Tab -->
+  <div class="tab-pane" id="pane-wishlist">
+    <div class="coll-panel">
+      <div class="panel-hdr">
+        <div class="panel-ttl">&#9733; Wishlist</div>
+        <div style="display:flex;align-items:center;gap:16px">
+          <span id="wishlistCount" style="font-family:'Cinzel',serif;font-size:10px;color:var(--silver-dim);letter-spacing:1px"></span>
+        </div>
+      </div>
+      <div id="wishlistGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;padding:20px 0"></div>
     </div>
   </div>
 
@@ -2238,6 +2256,103 @@ window.onload = function() {
   // Duplicate feature replaced with inline +/- controls
 
 
+  // ══ Wishlist ════════════════════════════════════════════════
+  var wishlist = [];
+  var wishlistUnsub = null;
+
+  function loadWishlist() {
+    if (!activeProfileId) return;
+    if (wishlistUnsub) { wishlistUnsub(); wishlistUnsub = null; }
+    wishlistUnsub = db.collection('profiles').doc(activeProfileId).collection('wishlist').onSnapshot(function(snap) {
+      wishlist = [];
+      snap.forEach(function(doc) {
+        wishlist.push(Object.assign({ wid: doc.id }, doc.data()));
+      });
+      renderWishlist();
+    });
+  }
+
+  function renderWishlist() {
+    var grid = document.getElementById('wishlistGrid');
+    if (!wishlist.length) {
+      grid.innerHTML = '<div class="deck-empty">No cards in wishlist. Search for cards and add them!</div>';
+      document.getElementById('wishlistCount').textContent = '';
+      return;
+    }
+    
+    document.getElementById('wishlistCount').textContent = wishlist.length + ' card' + (wishlist.length !== 1 ? 's' : '');
+    grid.innerHTML = '';
+    
+    wishlist.forEach(function(w) {
+      var card = document.createElement('div');
+      card.className = 'wishlist-card';
+      
+      var header = document.createElement('div');
+      header.style.cssText = 'display:flex;justify-content:space-between;align-items:start;margin-bottom:8px';
+      
+      var name = document.createElement('div');
+      name.style.cssText = 'font-family:Cinzel,serif;font-size:14px;color:var(--gold-pale);flex:1;cursor:pointer';
+      name.textContent = w.name;
+      name.onclick = function() { openCardModal(w.name); };
+      header.appendChild(name);
+      
+      var removeBtn = document.createElement('button');
+      removeBtn.style.cssText = 'background:none;border:none;color:var(--silver-dim);cursor:pointer;font-size:18px;line-height:1';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.onclick = function() { removeFromWishlist(w.wid); };
+      header.appendChild(removeBtn);
+      
+      card.appendChild(header);
+      
+      if (w.notes) {
+        var notes = document.createElement('div');
+        notes.style.cssText = 'font-size:12px;color:var(--silver);font-style:italic;margin-bottom:8px';
+        notes.textContent = w.notes;
+        card.appendChild(notes);
+      }
+      
+      var meta = document.createElement('div');
+      meta.style.cssText = 'font-size:11px;color:var(--silver-dim);display:flex;gap:12px';
+      if (w.priority) {
+        var priority = document.createElement('span');
+        priority.textContent = 'Priority: ' + w.priority;
+        meta.appendChild(priority);
+      }
+      if (w.addedAt) {
+        var date = document.createElement('span');
+        date.textContent = 'Added: ' + new Date(w.addedAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+        meta.appendChild(date);
+      }
+      card.appendChild(meta);
+      
+      grid.appendChild(card);
+    });
+  }
+
+  window.addToWishlist = function(cardName, notes, priority) {
+    requireAuth(function() {
+      if (!activeProfileId) return;
+      var wishlistData = {
+        name: cardName,
+        notes: notes || '',
+        priority: priority || 'Medium',
+        addedAt: Date.now()
+      };
+      db.collection('profiles').doc(activeProfileId).collection('wishlist').add(wishlistData).then(function() {
+        toast('Added to wishlist: ' + cardName);
+      }).catch(function(e){ toast('Failed to add: ' + e.message); });
+    });
+  };
+
+  window.removeFromWishlist = function(wid) {
+    requireAuth(function() {
+      if (!activeProfileId) return;
+      db.collection('profiles').doc(activeProfileId).collection('wishlist').doc(wid).delete().then(function(){
+        toast('Removed from wishlist');
+      }).catch(function(e){ toast('Remove failed'); });
+    });
+  };
+
   // ══ Deck Suggestions ════════════════════════════════════════
   var allSuggestions = [];
   var filteredSuggestions = [];
@@ -2548,11 +2663,12 @@ window.onload = function() {
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
-    ['collection','decks','suggestions'].forEach(function(t) {
+    ['collection','decks','wishlist','suggestions'].forEach(function(t) {
       document.getElementById('pane-' + t).classList.toggle('active', t === tab);
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
     if (tab === 'decks') renderSavedDecks();
+    if (tab === 'wishlist') renderWishlist();
     if (tab === 'suggestions') {
       if (allSuggestions.length === 0) {
         loadDeckSuggestions();
@@ -2702,6 +2818,12 @@ window.onload = function() {
       loadBtn.onclick = function(e){ e.stopPropagation(); loadDeckIntoBuilder(d); };
       actions.appendChild(loadBtn);
 
+      var dupBtn = document.createElement('button');
+      dupBtn.className = 'deck-action-btn export';
+      dupBtn.textContent = 'Duplicate';
+      dupBtn.onclick = function(e){ e.stopPropagation(); duplicateDeck(d); };
+      actions.appendChild(dupBtn);
+
       var expBtn = document.createElement('button');
       expBtn.className = 'deck-action-btn export';
       expBtn.textContent = 'Export .ydk';
@@ -2741,6 +2863,26 @@ window.onload = function() {
       db.collection('profiles').doc(activeProfileId).collection('decks').doc(did).delete().then(function(){
         toast('Deleted: ' + name);
       }).catch(function(e){ toast('Delete failed'); });
+    });
+  };
+
+  window.duplicateDeck = function(d) {
+    requireAuth(function() {
+      if (!activeProfileId) return;
+      var copyName = d.name + ' (Copy)';
+      var deckData = {
+        name: copyName,
+        main:  (d.main || []).map(function(c){ return {fid:c.fid, name:c.name, type:c.type, qty:c.qty}; }),
+        extra: (d.extra || []).map(function(c){ return {fid:c.fid, name:c.name, type:c.type, qty:c.qty}; }),
+        side:  (d.side || []).map(function(c){ return {fid:c.fid, name:c.name, type:c.type, qty:c.qty}; }),
+        mainCount:  d.mainCount || 0,
+        extraCount: d.extraCount || 0,
+        sideCount:  d.sideCount || 0,
+        savedAt: Date.now()
+      };
+      db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData).then(function() {
+        toast('Duplicated: ' + copyName);
+      }).catch(function(e){ toast('Duplicate failed: ' + e.message); });
     });
   };
 
@@ -2789,6 +2931,7 @@ window.onload = function() {
     // Start scoped listeners
     startProfileListener(profileId);
     loadSavedDecks();
+    loadWishlist();
     // Reset deck builder
     deck = { main: [], extra: [], side: [] };
     renderDeck();
@@ -2798,6 +2941,7 @@ window.onload = function() {
     var ps = document.getElementById('profileScreen');
     if (!ps) { console.error('profileScreen element not found'); return; }
     if (decksUnsub) { decksUnsub(); decksUnsub = null; }
+    if (wishlistUnsub) { wishlistUnsub(); wishlistUnsub = null; }
     if (cardsUnsub) { cardsUnsub(); cardsUnsub = null; }
     var psn = document.getElementById('profileScreenName');
     if (psn) psn.textContent = 'Collection';
