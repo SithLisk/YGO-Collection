@@ -66,7 +66,7 @@
    --silver #4a4035 on #f8f4ec = 9.2:1 ✓
 ─────────────────────────────────────────────────────────────── */
 [data-theme="ivory"] {
-  --void: #f8f4ec;
+  /*--void: #f8f4ec;*/
   --deep: #ede5d0;
   --mid: #d9ccb0;
   --bright: #b89a50;
