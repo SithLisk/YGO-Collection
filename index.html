@@ -623,6 +623,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <select id="fCardNum"></select>
         </div>
         <button class="btn btn-add" onclick="addToCollection()">+ Add Card</button>
+        <button class="btn" style="background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--void);padding:11px 24px" onclick="addSearchedCardToWishlist()">&#9733; Add to Wishlist</button>
       </div>
     </div>
   </div>
@@ -829,9 +830,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <div id="modalAtkDef" style="font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:1px"></div>
         <div id="modalSet" style="font-size:15px;color:var(--silver-dim)"></div>
         <div id="modalEffect" style="font-size:15px;color:var(--silver);line-height:1.8;font-style:italic;border-left:2px solid rgba(192,57,43,0.4);padding-left:14px;max-height:260px;overflow-y:auto"></div>
-        <button id="addToWishlistBtn" onclick="addCardToWishlist()" style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:10px 16px;background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--void);border:none;border-radius:8px;cursor:pointer;margin-top:8px">
-          &#9733; Add to Wishlist
-        </button>
       </div>
     </div>
   </div>
@@ -1723,9 +1721,6 @@ window.onload = function() {
   }
 
   window.openCardModal = function(cardName) {
-    // Store current card name for wishlist
-    window.currentModalCard = cardName;
-    
     // Look up the card from Firestore data first
     var entry = cards.find(function(c) { return c.name === cardName; });
     var modal = document.getElementById('cardModal');
@@ -1772,21 +1767,23 @@ window.onload = function() {
       .catch(function() {});
   };
 
-  window.addCardToWishlist = function() {
-    if (!window.currentModalCard) return;
+  window.addSearchedCardToWishlist = function() {
+    if (!selCard) {
+      toast('No card selected');
+      return;
+    }
     // Check if already in wishlist
-    var alreadyExists = wishlist.find(function(w) { return w.name === window.currentModalCard; });
+    var alreadyExists = wishlist.find(function(w) { return w.name === selCard.name; });
     if (alreadyExists) {
       toast('Card already in wishlist');
       return;
     }
-    addToWishlist(window.currentModalCard, '', 'Medium');
+    addToWishlist(selCard.name, '', 'Medium');
   };
 
   window.closeCardModal = function() {
     document.getElementById('cardModal').style.display = 'none';
     document.getElementById('modalImg').src = '';
-    window.currentModalCard = null;
   };
 
   // ── Deck Detail Modal ────────────────────────────────────────
