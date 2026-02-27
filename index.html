@@ -349,7 +349,11 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 /* ── Deck Detail Modal ────────────────────────────────────── */
 .deck-detail-zone { margin-bottom: 28px; }
 .deck-detail-zone:last-child { margin-bottom: 0; }
-.deck-detail-zone-header { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.deck-detail-zone-header { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.deck-detail-breakdown { display: flex; gap: 20px; font-size: 12px; color: var(--silver); margin-bottom: 14px; flex-wrap: wrap; }
+.deck-detail-breakdown .breakdown-item { display: flex; align-items: center; gap: 6px; }
+.deck-detail-breakdown .breakdown-label { color: var(--silver-dim); }
+.deck-detail-breakdown b { color: var(--gold-pale); font-family: 'Cinzel', serif; }
 .deck-detail-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
 @media(max-width:768px) { .deck-detail-cards { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; } }
 .deck-detail-card { position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-radius: 8px; overflow: hidden; }
@@ -1474,12 +1478,40 @@ window.onload = function() {
       var zoneDiv = document.createElement('div');
       zoneDiv.className = 'deck-detail-zone';
       
+      // Calculate type counts
+      var monsterCount = 0;
+      var spellCount = 0;
+      var trapCount = 0;
+      
+      zoneCards.forEach(function(card) {
+        var qty = card.qty || 1;
+        var type = (card.type || '').toLowerCase();
+        
+        if (type.includes('monster')) {
+          monsterCount += qty;
+        } else if (type.includes('spell')) {
+          spellCount += qty;
+        } else if (type.includes('trap')) {
+          trapCount += qty;
+        }
+      });
+      
       var header = document.createElement('div');
       header.className = 'deck-detail-zone-header';
       var zoneName = zone === 'main' ? 'Main Deck' : zone === 'extra' ? 'Extra Deck' : 'Side Deck';
       var totalCards = zoneCards.reduce(function(sum, c) { return sum + c.qty; }, 0);
-      header.textContent = zoneName + ' (' + totalCards + ')';
+      header.innerHTML = zoneName + ' (' + totalCards + ')';
+      
+      // Add type breakdown
+      var breakdown = document.createElement('div');
+      breakdown.className = 'deck-detail-breakdown';
+      breakdown.innerHTML = 
+        '<span class="breakdown-item"><span class="breakdown-label">Monsters:</span> <b>' + monsterCount + '</b></span>' +
+        '<span class="breakdown-item"><span class="breakdown-label">Spells:</span> <b>' + spellCount + '</b></span>' +
+        '<span class="breakdown-item"><span class="breakdown-label">Traps:</span> <b>' + trapCount + '</b></span>';
+      
       zoneDiv.appendChild(header);
+      zoneDiv.appendChild(breakdown);
       
       var cardsGrid = document.createElement('div');
       cardsGrid.className = 'deck-detail-cards';
