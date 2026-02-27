@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 <style>
 :root {
   --void: #080404;
@@ -2881,16 +2881,29 @@ window.onload = function() {
   
   function renderStats() {
     if (!cards.length) {
-      toast('No cards in collection to analyze');
+      document.getElementById('stat-unique-cards').textContent = '0';
+      document.getElementById('stat-total-cards').textContent = '0';
+      document.getElementById('stat-total-decks').textContent = '0';
+      document.getElementById('stat-avg-qty').textContent = '0';
+      
+      // Show message in chart areas
+      ['typeChart', 'rarityChart', 'conditionChart', 'archetypeChart', 'growthChart'].forEach(function(id) {
+        var canvas = document.getElementById(id);
+        if (canvas && canvas.parentElement) {
+          canvas.parentElement.innerHTML = '<div style="padding:60px 20px;text-align:center;color:var(--silver-dim);font-family:Cinzel,serif;font-size:12px;letter-spacing:2px">No cards in collection</div>';
+        }
+      });
       return;
     }
     
     // Check if Chart.js is loaded
     if (typeof Chart === 'undefined') {
       console.error('Chart.js not loaded');
-      toast('Error: Chart library not loaded');
+      alert('Chart.js library failed to load. Please check your internet connection and refresh the page.');
       return;
     }
+    
+    console.log('Rendering statistics for ' + cards.length + ' cards...');
     
     // Summary statistics
     var uniqueCards = cards.length;
@@ -2911,13 +2924,15 @@ window.onload = function() {
       renderGrowthChart();
       renderTopCardsTable();
       renderDeckStatsTable();
+      console.log('Statistics rendered successfully');
     } catch (err) {
       console.error('Error rendering statistics:', err);
-      toast('Error rendering statistics: ' + err.message);
+      alert('Error rendering statistics: ' + err.message);
     }
   }
   
   function renderTypeChart() {
+    console.log('Rendering type chart...');
     var canvas = document.getElementById('typeChart');
     if (!canvas) {
       console.error('typeChart canvas not found');
@@ -2957,6 +2972,7 @@ window.onload = function() {
         }
       }
     });
+    console.log('Type chart rendered');
   }
   
   function renderRarityChart() {
