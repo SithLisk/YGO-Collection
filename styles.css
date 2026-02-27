@@ -91,7 +91,6 @@
 [data-theme="ivory"] .saved-deck-card { background: rgba(255,255,255,0.5); }
 [data-theme="ivory"] .ps-card { background: linear-gradient(160deg,rgba(255,255,255,0.7),rgba(240,232,210,0.8)); }
 [data-theme="ivory"] #profileScreen > div:first-child { background: rgba(248,244,236,0.96); }
-[data-theme="ivory"] .profile-screen-bg { background: #f0e8d0; }
 [data-theme="ivory"] .bg-overlay { background: rgba(248,244,236,0.82) !important; }
 [data-theme="ivory"] .coll-panel { background: rgba(255,255,255,0.55); backdrop-filter: blur(4px); }
 [data-theme="ivory"] .deck-section { background: rgba(255,255,255,0.55); backdrop-filter: blur(4px); }
