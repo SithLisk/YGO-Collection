@@ -573,18 +573,24 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   <div class="tab-pane active" id="pane-collection">
   <div class="coll-panel">
     <div class="panel-hdr">
-      <div style="position:relative;display:inline-block">
-        <button id="collFilterBtn" onclick="toggleCollDropdown()" style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0">
-          My Collection
-          <span id="collFilterLabel" style="font-size:9px;color:var(--accent);letter-spacing:1px"></span>
-          <span style="font-size:10px;color:var(--silver-dim)">&#9660;</span>
-        </button>
-        <div id="collDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a0505;border:1px solid var(--border);border-radius:10px;min-width:160px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden">
-          <div class="coll-filter-opt" onclick="setCollTypeFilter('')">All Cards</div>
-          <div class="coll-filter-opt" onclick="setCollTypeFilter('monster')">&#x25CF; Monsters</div>
-          <div class="coll-filter-opt" onclick="setCollTypeFilter('spell')">&#x25CF; Spells</div>
-          <div class="coll-filter-opt" onclick="setCollTypeFilter('trap')">&#x25CF; Traps</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="position:relative;display:inline-block">
+          <button id="collFilterBtn" onclick="toggleCollDropdown()" style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:0">
+            My Collection
+            <span id="collFilterLabel" style="font-size:9px;color:var(--accent);letter-spacing:1px"></span>
+            <span style="font-size:10px;color:var(--silver-dim)">&#9660;</span>
+          </button>
+          <div id="collDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a0505;border:1px solid var(--border);border-radius:10px;min-width:160px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden">
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('')">All Cards</div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('monster')">&#x25CF; Monsters</div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('spell')">&#x25CF; Spells</div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('trap')">&#x25CF; Traps</div>
+          </div>
         </div>
+        <label class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import from CSV">
+          &#x1F4E5; Import CSV
+          <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+        </label>
       </div>
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div style="position:relative">
@@ -593,10 +599,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
             oninput="filterCollection()">
           <span id="collClear" onclick="clearCollSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--silver-dim);font-size:14px">&#x2715;</span>
         </div>
-        <label class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import from CSV">
-          &#x1F4E5; Import CSV
-          <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(this)">
-        </label>
         <div style="display:flex;align-items:center;gap:8px">
           <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--silver-dim);letter-spacing:1px">Per Page:</span>
           <select id="pageSize" onchange="changePageSize()" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:4px 8px;cursor:pointer">
