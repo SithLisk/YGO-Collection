@@ -355,6 +355,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .deck-detail-breakdown .breakdown-label { color: var(--silver-dim); }
 .deck-detail-breakdown b { color: var(--gold-pale); font-family: 'Cinzel', serif; }
 .deck-detail-type-header { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); margin-top: 20px; margin-bottom: 10px; padding-left: 4px; border-left: 3px solid var(--gold-dim); }
+.deck-detail-subtype-header { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--silver-dim); margin-top: 16px; margin-bottom: 8px; padding-left: 8px; font-style: italic; }
 .deck-detail-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
 @media(max-width:768px) { .deck-detail-cards { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; } }
 .deck-detail-card { position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-radius: 8px; overflow: hidden; }
@@ -1480,15 +1481,41 @@ window.onload = function() {
       var zoneDiv = document.createElement('div');
       zoneDiv.className = 'deck-detail-zone';
       
-      // Separate cards by type
-      var monsters = [];
+      // Separate cards by type and monster subtype
+      var monstersBySubtype = {
+        fusion: [],
+        synchro: [],
+        xyz: [],
+        link: [],
+        ritual: [],
+        effect: [],
+        normal: [],
+        other: []
+      };
       var spells = [];
       var traps = [];
       
       zoneCards.forEach(function(card) {
         var type = (card.type || '').toLowerCase();
         if (type.includes('monster')) {
-          monsters.push(card);
+          // Categorize by monster subtype
+          if (type.includes('fusion')) {
+            monstersBySubtype.fusion.push(card);
+          } else if (type.includes('synchro')) {
+            monstersBySubtype.synchro.push(card);
+          } else if (type.includes('xyz')) {
+            monstersBySubtype.xyz.push(card);
+          } else if (type.includes('link')) {
+            monstersBySubtype.link.push(card);
+          } else if (type.includes('ritual')) {
+            monstersBySubtype.ritual.push(card);
+          } else if (type.includes('effect')) {
+            monstersBySubtype.effect.push(card);
+          } else if (type.includes('normal')) {
+            monstersBySubtype.normal.push(card);
+          } else {
+            monstersBySubtype.other.push(card);
+          }
         } else if (type.includes('spell')) {
           spells.push(card);
         } else if (type.includes('trap')) {
@@ -1496,8 +1523,11 @@ window.onload = function() {
         }
       });
       
-      // Calculate type counts
-      var monsterCount = monsters.reduce(function(sum, c) { return sum + c.qty; }, 0);
+      // Calculate total monster count
+      var monsterCount = 0;
+      Object.keys(monstersBySubtype).forEach(function(subtype) {
+        monsterCount += monstersBySubtype[subtype].reduce(function(sum, c) { return sum + c.qty; }, 0);
+      });
       var spellCount = spells.reduce(function(sum, c) { return sum + c.qty; }, 0);
       var trapCount = traps.reduce(function(sum, c) { return sum + c.qty; }, 0);
       
@@ -1518,15 +1548,8 @@ window.onload = function() {
       zoneDiv.appendChild(header);
       zoneDiv.appendChild(breakdown);
       
-      // Function to render a type section
-      function renderTypeSection(cards, typeName) {
-        if (!cards.length) return;
-        
-        var typeHeader = document.createElement('div');
-        typeHeader.className = 'deck-detail-type-header';
-        typeHeader.textContent = typeName;
-        zoneDiv.appendChild(typeHeader);
-        
+      // Function to render a card grid
+      function renderCardGrid(cards) {
         var cardsGrid = document.createElement('div');
         cardsGrid.className = 'deck-detail-cards';
         
@@ -1563,11 +1586,63 @@ window.onload = function() {
           cardsGrid.appendChild(cardDiv);
         });
         
-        zoneDiv.appendChild(cardsGrid);
+        return cardsGrid;
       }
       
-      // Render sections in order: Monsters, Spells, Traps
-      renderTypeSection(monsters, 'Monsters');
+      // Function to render a type section with optional subsections
+      function renderTypeSection(sectionData, sectionTitle) {
+        if (!sectionData) return;
+        
+        // Check if we have any cards
+        var hasCards = false;
+        if (Array.isArray(sectionData)) {
+          hasCards = sectionData.length > 0;
+        } else {
+          // It's an object with subsections
+          Object.keys(sectionData).forEach(function(key) {
+            if (sectionData[key].length > 0) hasCards = true;
+          });
+        }
+        
+        if (!hasCards) return;
+        
+        var typeHeader = document.createElement('div');
+        typeHeader.className = 'deck-detail-type-header';
+        typeHeader.textContent = sectionTitle;
+        zoneDiv.appendChild(typeHeader);
+        
+        if (Array.isArray(sectionData)) {
+          // Simple array of cards
+          zoneDiv.appendChild(renderCardGrid(sectionData));
+        } else {
+          // Object with subsections (for monsters)
+          var subtypeOrder = ['fusion', 'synchro', 'xyz', 'link', 'ritual', 'effect', 'normal', 'other'];
+          var subtypeLabels = {
+            fusion: 'Fusion',
+            synchro: 'Synchro',
+            xyz: 'Xyz',
+            link: 'Link',
+            ritual: 'Ritual',
+            effect: 'Effect',
+            normal: 'Normal',
+            other: 'Other'
+          };
+          
+          subtypeOrder.forEach(function(subtype) {
+            var cards = sectionData[subtype];
+            if (cards && cards.length > 0) {
+              var subtypeHeader = document.createElement('div');
+              subtypeHeader.className = 'deck-detail-subtype-header';
+              subtypeHeader.textContent = subtypeLabels[subtype];
+              zoneDiv.appendChild(subtypeHeader);
+              zoneDiv.appendChild(renderCardGrid(cards));
+            }
+          });
+        }
+      }
+      
+      // Render sections in order: Monsters (with subtypes), Spells, Traps
+      renderTypeSection(monstersBySubtype, 'Monsters');
       renderTypeSection(spells, 'Spells');
       renderTypeSection(traps, 'Traps');
       
