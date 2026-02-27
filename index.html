@@ -706,6 +706,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <th onclick="sortBy('edition')"   class="sortable">Edition <span class="sort-icon" id="si-edition"></span></th>
           <th onclick="sortBy('qty')"       class="sortable">Qty <span class="sort-icon" id="si-qty"></span></th>
           <th onclick="sortBy('inDecks')"   class="sortable">In Decks <span class="sort-icon" id="si-inDecks"></span></th>
+          <th onclick="sortBy('addedAt')"   class="sortable">Date Added <span class="sort-icon" id="si-addedAt"></span></th>
           <th></th>
         </tr></thead>
         <tbody id="collBody">
@@ -1245,7 +1246,6 @@ window.onload = function() {
         if (!card) return;
         // Show undo toast
         var t = document.getElementById('toast');
-        var t = document.getElementById('toast');
         t.innerHTML = '';
         var msg = document.createTextNode(card.name + ' removed  ');
         var undoBtn = document.createElement('button');
@@ -1313,18 +1313,46 @@ window.onload = function() {
         
         toast('Processing ' + (lines.length - 1) + ' cards from CSV...');
         
+        // Parse CSV line properly handling quotes
+        function parseCSVLine(line) {
+          var result = [];
+          var current = '';
+          var inQuotes = false;
+          for (var j = 0; j < line.length; j++) {
+            var char = line[j];
+            if (char === '"') {
+              if (inQuotes && line[j + 1] === '"') {
+                current += '"';
+                j++;
+              } else {
+                inQuotes = !inQuotes;
+              }
+            } else if (char === ',' && !inQuotes) {
+              result.push(current.trim());
+              current = '';
+            } else {
+              current += char;
+            }
+          }
+          result.push(current.trim());
+          return result;
+        }
+        
         // Process each line
         for (var i = 1; i < lines.length; i++) {
-          var values = lines[i].split(',').map(function(v) { return v.trim(); });
+          var values = parseCSVLine(lines[i]);
           var cardName = values[nameIdx];
           
           if (!cardName) continue;
           
+          // Remove quotes from card name if present
+          cardName = cardName.replace(/^"(.*)"$/, '$1');
+          
           cardsToAdd.push({
             name: cardName,
-            rarity: rarityIdx !== -1 ? values[rarityIdx] : 'Common',
-            condition: conditionIdx !== -1 ? values[conditionIdx] : 'Near Mint',
-            edition: editionIdx !== -1 ? values[editionIdx] : 'Unlimited',
+            rarity: rarityIdx !== -1 ? (values[rarityIdx] || '').replace(/^"(.*)"$/, '$1') : 'Common',
+            condition: conditionIdx !== -1 ? (values[conditionIdx] || '').replace(/^"(.*)"$/, '$1') : 'Near Mint',
+            edition: editionIdx !== -1 ? (values[editionIdx] || '').replace(/^"(.*)"$/, '$1') : 'Unlimited',
             qty: qtyIdx !== -1 ? parseInt(values[qtyIdx]) || 1 : 1
           });
         }
@@ -1576,6 +1604,10 @@ window.onload = function() {
       var inDecksCount = countCardInDecks(e.name);
       var inDecksStyle = inDecksCount > 0 ? 'color:var(--gold);font-weight:600' : 'color:var(--silver-dim)';
       h += '<td class="td-sm" style="text-align:center;' + inDecksStyle + '">' + inDecksCount + '</td>';
+      
+      // Date Added
+      var dateAdded = e.addedAt ? new Date(e.addedAt).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'}) : '—';
+      h += '<td class="td-sm" style="font-size:11px;color:var(--silver-dim)">' + dateAdded + '</td>';
       
       h += '<td><button class="btn-del" onclick="removeEntry(\'' + e.fid + '\')">X</button></td>';
       h += '</tr>';
