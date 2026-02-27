@@ -705,6 +705,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <th onclick="sortBy('condition')" class="sortable">Condition <span class="sort-icon" id="si-condition"></span></th>
           <th onclick="sortBy('edition')"   class="sortable">Edition <span class="sort-icon" id="si-edition"></span></th>
           <th onclick="sortBy('qty')"       class="sortable">Qty <span class="sort-icon" id="si-qty"></span></th>
+          <th onclick="sortBy('inDecks')"   class="sortable">In Decks <span class="sort-icon" id="si-inDecks"></span></th>
           <th></th>
         </tr></thead>
         <tbody id="collBody">
@@ -1470,7 +1471,24 @@ window.onload = function() {
     if (col === 'atk')   return isNaN(Number(e.atk)) ? -1 : Number(e.atk);
     if (col === 'level') return Number(e.level) || 0;
     if (col === 'type')  return getTypeDisplay(e).toLowerCase();
+    if (col === 'inDecks') return countCardInDecks(e.name);
     return String(e[col] || '').toLowerCase();
+  }
+
+  function countCardInDecks(cardName) {
+    var count = 0;
+    savedDecks.forEach(function(deck) {
+      ['main', 'extra', 'side'].forEach(function(zone) {
+        if (deck[zone]) {
+          deck[zone].forEach(function(card) {
+            if (card.name === cardName) {
+              count += card.qty || 1;
+            }
+          });
+        }
+      });
+    });
+    return count;
   }
 
   function filteredCards() {
@@ -1552,6 +1570,12 @@ window.onload = function() {
       h += '<td><span class="cb ' + cClass(e.condition) + '">' + esc(e.condition) + '</span></td>';
       h += '<td class="td-sm">' + esc(e.edition) + '</td>';
       h += '<td style="padding:4px 8px"><div class="qty-ctrl"><button class="qty-btn" data-fid="'+e.fid+'" data-delta="-1">&#8722;</button><span class="qty-val">'+(e.qty||0)+'</span><button class="qty-btn" data-fid="'+e.fid+'" data-delta="1">+</button></div></td>';
+      
+      // Count how many copies are in decks
+      var inDecksCount = countCardInDecks(e.name);
+      var inDecksStyle = inDecksCount > 0 ? 'color:var(--gold);font-weight:600' : 'color:var(--silver-dim)';
+      h += '<td class="td-sm" style="text-align:center;' + inDecksStyle + '">' + inDecksCount + '</td>';
+      
       h += '<td><button class="btn-del" onclick="removeEntry(\'' + e.fid + '\')">X</button></td>';
       h += '</tr>';
     });
