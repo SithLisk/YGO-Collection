@@ -3537,13 +3537,19 @@ window.onload = function() {
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
+    console.log('switchTab called with:', tab);
     ['collection','stats','decks','wishlist','suggestions'].forEach(function(t) {
-      document.getElementById('pane-' + t).classList.toggle('active', t === tab);
-      document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+      var pane = document.getElementById('pane-' + t);
+      var button = document.getElementById('tab-' + t);
+      console.log('Tab:', t, 'Pane exists:', !!pane, 'Button exists:', !!button);
+      if (pane) pane.classList.toggle('active', t === tab);
+      if (button) button.classList.toggle('active', t === tab);
     });
     if (tab === 'stats') {
+      console.log('Stats tab activated, will render in 100ms');
       // Delay to ensure canvas elements are visible
       setTimeout(function() {
+        console.log('Calling renderStats now');
         renderStats();
       }, 100);
     }
