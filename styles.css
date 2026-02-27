@@ -82,11 +82,11 @@
 }
 
 /* ── Ivory theme: content boxes → White ──────────── */
-[data-theme="ivory"] .panel-hdr,
-[data-theme="ivory"] .coll-panel,
-[data-theme="ivory"] .sync-bar,
-[data-theme="ivory"] .deck-section,
 [data-theme="ivory"] .search-panel,
+[data-theme="ivory"] .sync-bar,
+[data-theme="ivory"] .panel-hdr { background: rgba(255,255,255,0.55); }
+[data-theme="ivory"] .coll-panel { background: rgba(255,255,255,0.55); }
+[data-theme="ivory"] .deck-section,
 [data-theme="ivory"] #pwModal > div,
 [data-theme="ivory"] #newProfileModal > div,
 [data-theme="ivory"] #cardModal > div,
