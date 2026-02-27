@@ -593,10 +593,30 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
             oninput="filterCollection()">
           <span id="collClear" onclick="clearCollSearch()" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;color:var(--silver-dim);font-size:14px">&#x2715;</span>
         </div>
+        <label class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import from CSV">
+          &#x1F4E5; Import CSV
+          <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(this)">
+        </label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--silver-dim);letter-spacing:1px">Per Page:</span>
+          <select id="pageSize" onchange="changePageSize()" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:4px 8px;cursor:pointer">
+            <option value="50">50</option>
+            <option value="100">100</option>
+          </select>
+        </div>
         <div class="stats-row">
           <div class="stat"><span class="stat-n" id="statUnique">0</span><span class="stat-l">Unique</span></div>
           <div class="stat"><span class="stat-n" id="statTotal">0</span><span class="stat-l">Total Cards</span></div>
         </div>
+      </div>
+    </div>
+    <div id="paginationTop" style="padding:12px 28px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,0.2)">
+      <div style="font-family:'Cinzel',serif;font-size:10px;color:var(--silver-dim);letter-spacing:1px">
+        Page <span id="currentPageDisplay">1</span> of <span id="totalPagesDisplay">1</span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="prevPageBtn" onclick="prevPage()" style="font-family:'Cinzel',serif;font-size:9px;padding:6px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">&#9664; Prev</button>
+        <button id="nextPageBtn" onclick="nextPage()" style="font-family:'Cinzel',serif;font-size:9px;padding:6px 12px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">Next &#9654;</button>
       </div>
     </div>
     <div class="tbl-wrap">
@@ -1006,6 +1026,8 @@ window.onload = function() {
   var sortDir = 1;
   var collFilter = '';
   var collTypeFilter = '';
+  var currentPage = 1;
+  var pageSize = 50;
 
   function sha256(str) {
     // Use SubtleCrypto to hash the password
@@ -1138,6 +1160,122 @@ window.onload = function() {
     col.add(card).catch(function(e){ toast('Undo failed: ' + e.message); });
   };
 
+  // CSV Import
+  window.importCSV = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    requireAuth(function() {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        var text = e.target.result;
+        var lines = text.split(/\r?\n/).filter(function(line) { return line.trim(); });
+        
+        if (lines.length < 2) {
+          toast('CSV file appears to be empty');
+          input.value = '';
+          return;
+        }
+        
+        // Parse header
+        var header = lines[0].split(',').map(function(h) { return h.trim().toLowerCase(); });
+        var nameIdx = header.indexOf('name');
+        
+        if (nameIdx === -1) {
+          toast('CSV must have a "name" column');
+          input.value = '';
+          return;
+        }
+        
+        // Optional columns
+        var rarityIdx = header.indexOf('rarity');
+        var conditionIdx = header.indexOf('condition');
+        var editionIdx = header.indexOf('edition');
+        var qtyIdx = header.indexOf('qty') !== -1 ? header.indexOf('qty') : header.indexOf('quantity');
+        
+        var cardsToAdd = [];
+        var successCount = 0;
+        var failCount = 0;
+        
+        toast('Processing ' + (lines.length - 1) + ' cards from CSV...');
+        
+        // Process each line
+        for (var i = 1; i < lines.length; i++) {
+          var values = lines[i].split(',').map(function(v) { return v.trim(); });
+          var cardName = values[nameIdx];
+          
+          if (!cardName) continue;
+          
+          cardsToAdd.push({
+            name: cardName,
+            rarity: rarityIdx !== -1 ? values[rarityIdx] : 'Common',
+            condition: conditionIdx !== -1 ? values[conditionIdx] : 'Near Mint',
+            edition: editionIdx !== -1 ? values[editionIdx] : 'Unlimited',
+            qty: qtyIdx !== -1 ? parseInt(values[qtyIdx]) || 1 : 1
+          });
+        }
+        
+        // Add cards one by one
+        var processNext = function(idx) {
+          if (idx >= cardsToAdd.length) {
+            toast('Import complete: ' + successCount + ' added, ' + failCount + ' failed');
+            input.value = '';
+            return;
+          }
+          
+          var cardData = cardsToAdd[idx];
+          
+          // Fetch card data from API
+          fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(cardData.name))
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+              if (!data || !data.data || !data.data[0]) {
+                failCount++;
+                processNext(idx + 1);
+                return;
+              }
+              
+              var apiCard = data.data[0];
+              var setInfo = apiCard.card_sets && apiCard.card_sets[0];
+              
+              var entry = {
+                name: apiCard.name,
+                type: apiCard.type || '—',
+                race: apiCard.race || '—',
+                attribute: apiCard.attribute || '—',
+                archetype: apiCard.archetype || '—',
+                atk: apiCard.atk !== undefined ? String(apiCard.atk) : '—',
+                def: apiCard.def !== undefined ? String(apiCard.def) : '—',
+                level: apiCard.level || 0,
+                desc: apiCard.desc || '',
+                setName: setInfo ? setInfo.set_name : '—',
+                cardNumber: setInfo ? setInfo.set_code : '—',
+                rarity: cardData.rarity || (setInfo ? setInfo.set_rarity : 'Common'),
+                condition: cardData.condition || 'Near Mint',
+                edition: cardData.edition || 'Unlimited',
+                qty: cardData.qty || 1,
+                cardImageId: apiCard.id
+              };
+              
+              col.add(entry).then(function() {
+                successCount++;
+                processNext(idx + 1);
+              }).catch(function(e) {
+                failCount++;
+                processNext(idx + 1);
+              });
+            })
+            .catch(function() {
+              failCount++;
+              processNext(idx + 1);
+            });
+        };
+        
+        processNext(0);
+      };
+      reader.readAsText(file);
+    });
+  };
+
   // Collection type dropdown
   window.toggleCollDropdown = function() {
     var dd = document.getElementById('collDropdown');
@@ -1161,6 +1299,7 @@ window.onload = function() {
     var labels = { '': '', 'monster': '— Monsters', 'spell': '— Spells', 'trap': '— Traps' };
     document.getElementById('collFilterLabel').textContent = labels[type] || '';
     document.getElementById('collDropdown').style.display = 'none';
+    currentPage = 1; // Reset to first page
     renderTable();
   };
 
@@ -1177,6 +1316,7 @@ window.onload = function() {
     var inp = document.getElementById('collSearch');
     collFilter = inp.value.trim().toLowerCase();
     document.getElementById('collClear').style.display = collFilter ? 'inline' : 'none';
+    currentPage = 1; // Reset to first page
     renderTable();
   };
 
@@ -1184,6 +1324,7 @@ window.onload = function() {
     document.getElementById('collSearch').value = '';
     collFilter = '';
     document.getElementById('collClear').style.display = 'none';
+    currentPage = 1; // Reset to first page
     renderTable();
   };
 
@@ -1254,10 +1395,24 @@ window.onload = function() {
     var tbody = document.getElementById('collBody');
     if (!cards.length) {
       tbody.innerHTML = '<tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
-      updateStats(); return;
+      updateStats(); 
+      updatePagination();
+      return;
     }
+    var allCards = sortedCards();
+    var totalPages = Math.ceil(allCards.length / pageSize);
+    
+    // Ensure current page is valid
+    if (currentPage > totalPages && totalPages > 0) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+    
+    // Get cards for current page
+    var startIdx = (currentPage - 1) * pageSize;
+    var endIdx = startIdx + pageSize;
+    var pageCards = allCards.slice(startIdx, endIdx);
+    
     var h = '';
-    sortedCards().forEach(function(e) {
+    pageCards.forEach(function(e) {
       var tl = tLabel(e.type);
       var dc = dotClass(e.type);
       var tot = (e.qty||0)*(e.price||0);
@@ -1289,7 +1444,51 @@ window.onload = function() {
     });
     tbody.innerHTML = h;
     updateStats();
+    updatePagination();
   }
+
+  // Pagination functions
+  function updatePagination() {
+    var allCards = sortedCards();
+    var totalPages = Math.max(1, Math.ceil(allCards.length / pageSize));
+    
+    document.getElementById('currentPageDisplay').textContent = currentPage;
+    document.getElementById('totalPagesDisplay').textContent = totalPages;
+    
+    var prevBtn = document.getElementById('prevPageBtn');
+    var nextBtn = document.getElementById('nextPageBtn');
+    
+    prevBtn.disabled = currentPage <= 1;
+    nextBtn.disabled = currentPage >= totalPages;
+    
+    prevBtn.style.opacity = currentPage <= 1 ? '0.5' : '1';
+    nextBtn.style.opacity = currentPage >= totalPages ? '0.5' : '1';
+    prevBtn.style.cursor = currentPage <= 1 ? 'not-allowed' : 'pointer';
+    nextBtn.style.cursor = currentPage >= totalPages ? 'not-allowed' : 'pointer';
+  }
+  
+  window.prevPage = function() {
+    if (currentPage > 1) {
+      currentPage--;
+      renderTable();
+      document.querySelector('.tbl-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  
+  window.nextPage = function() {
+    var totalPages = Math.ceil(sortedCards().length / pageSize);
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderTable();
+      document.querySelector('.tbl-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+  
+  window.changePageSize = function() {
+    pageSize = parseInt(document.getElementById('pageSize').value);
+    currentPage = 1; // Reset to first page
+    renderTable();
+  };
 
   // Qty button delegation on collection table
   document.addEventListener('click', function(e) {
