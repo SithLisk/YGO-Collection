@@ -161,6 +161,11 @@
 [data-theme="radiance"] .ps-label { color: #2a2416; }
 [data-theme="radiance"] .ps-meta { color: #6a5d48; }
 [data-theme="radiance"] .tab-nav { background: rgb(255,253,245); border-bottom-color: rgba(212,175,55,0.25); }
+[data-theme="radiance"] #cardModal > div { background: rgb(248,246,240); border-color: rgba(212,175,55,0.4); }
+[data-theme="radiance"] #cardModal #modalName { color: #2a2416; }
+[data-theme="radiance"] #cardModal #modalEffect { color: #4a3d28; border-left-color: rgba(212,175,55,0.4); }
+[data-theme="radiance"] #cardModal #modalAtkDef { color: #6a5d48; }
+[data-theme="radiance"] #cardModal #modalSet { color: #8a7d68; }
 
 /* ── Dark theme: content boxes → pure black with white glow ──────────── */
 [data-theme="dark"] .coll-panel,
@@ -175,6 +180,10 @@
 [data-theme="dark"] #profileScreen > div:first-child { background: rgba(0,0,0,0.98); }
 [data-theme="dark"] .ps-card { background: linear-gradient(160deg,rgba(10,10,10,0.9),rgba(0,0,0,0.95)); }
 [data-theme="dark"] .tab-nav { background: rgba(0,0,0,0.98); border-bottom-color: rgba(224,224,224,0.25); }
+[data-theme="dark"] #cardModal #modalName { color: #f5f5f5; }
+[data-theme="dark"] #cardModal #modalEffect { color: #e0e0e0; border-left-color: rgba(224,224,224,0.25); }
+[data-theme="dark"] #cardModal #modalAtkDef { color: #e0e0e0; }
+[data-theme="dark"] #cardModal #modalSet { color: #b0b0b0; }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -660,6 +669,12 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           &#x1F4E5; Import CSV
           <input type="file" id="csvImportInput" accept=".csv" style="display:none" onchange="importCSV(this)">
         </label>
+        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(100,60,160,0.25);color:var(--silver);border:1px solid rgba(150,100,200,0.3)" onclick="quickFilter('notInDecks')" title="Show cards not used in any deck">
+          Not in Decks
+        </button>
+        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(76,175,80,0.25);color:var(--silver);border:1px solid rgba(76,175,80,0.3)" onclick="quickFilter('recent')" title="Show cards added in last 7 days">
+          Recently Added
+        </button>
       </div>
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <div style="position:relative">
@@ -717,6 +732,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <div class="rarity-breakdown" id="rarityBreakdown"></div>
     <div class="exp-bar">
       <button class="btn btn-gold" onclick="exportCSV()">&#8595; Export CSV for Excel</button>
+      <button class="btn btn-gold" onclick="downloadBackup()" style="margin-left:12px">&#128190; Download Backup</button>
+      <label class="btn btn-gold" style="margin-left:12px;cursor:pointer">&#128193; Restore Backup<input type="file" id="backupImportInput" accept=".json" style="display:none" onchange="restoreBackup(this)"></label>
       <button class="btn btn-gold" onclick="confirmRemoveAllCards()" style="background:linear-gradient(135deg,#b82020,#d62828);margin-left:12px">&#x1F5D1; Remove All Cards</button>
     </div>
   </div>
@@ -1075,6 +1092,16 @@ window.onload = function() {
     var pc = tl.c === 'bs' ? 'ps' : tl.c === 'bt' ? 'pt' : 'pm';
     var mh = '<span class="mpill ' + pc + '">' + esc(card.type) + '</span>';
     if (card.archetype) mh += '<span class="mpill pa">' + esc(card.archetype) + '</span>';
+    
+    // Fix #9: Show owned status indicator
+    var ownedCards = cards.filter(function(c) { return c.name === card.name; });
+    if (ownedCards.length > 0) {
+      var totalQty = ownedCards.reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
+      mh += '<span class="mpill" style="background:rgba(76,175,80,0.15);border-color:rgba(76,175,80,0.4);color:#81c784">✓ In Collection (' + totalQty + ' owned)</span>';
+    } else {
+      mh += '<span class="mpill" style="background:rgba(100,100,100,0.1);border-color:rgba(150,150,150,0.3);color:var(--silver-dim)">Not in collection</span>';
+    }
+    
     document.getElementById('previewMeta').innerHTML = mh;
 
     var ad = document.getElementById('previewAtkDef');
@@ -1212,6 +1239,41 @@ window.onload = function() {
     if (!selCard) return;
     var c = selCard;
     var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
+    
+    // Fix #6: Check for duplicate card
+    var selectedCardNum = (function(){ var s=document.getElementById('fCardNum'); return s && s.selectedIndex>=0 ? s.value : (fs.set_code||'—'); })();
+    var selectedRarity = document.getElementById('fRarity').value;
+    var selectedCondition = document.getElementById('fCondition').value;
+    
+    var duplicate = cards.find(function(card) {
+      return card.name === c.name && 
+             card.cardNumber === selectedCardNum && 
+             card.rarity === selectedRarity && 
+             card.condition === selectedCondition;
+    });
+    
+    if (duplicate) {
+      var increaseQty = confirm(
+        'This card already exists in your collection:\n\n' +
+        c.name + '\n' +
+        selectedCardNum + ' - ' + selectedRarity + ' - ' + selectedCondition + '\n' +
+        'Current quantity: ' + (duplicate.qty || 1) + '\n\n' +
+        'Would you like to increase the quantity instead of creating a duplicate entry?'
+      );
+      
+      if (increaseQty) {
+        var qtyToAdd = parseInt(document.getElementById('fQty').value) || 1;
+        col.doc(duplicate.fid).update({
+          qty: (duplicate.qty || 1) + qtyToAdd
+        }).then(function() {
+          toast(c.name + ' quantity increased by ' + qtyToAdd + '!');
+          document.getElementById('fQty').value = 1;
+        }).catch(function(e) { toast('Update failed: ' + e.message); });
+        return;
+      }
+      // If user clicked Cancel, continue to add as new entry
+    }
+    
     sync('syncing','Saving...');
     col.add({
       name: c.name, type: c.type, race: c.race||'—', level: c.level||c.linkval||null,
@@ -1222,9 +1284,9 @@ window.onload = function() {
       def: c.def!==undefined ? (c.def===-1?'?':String(c.def)) : '—',
       setName: (function(){ var s=document.getElementById('fCardNum'); return s && s.selectedIndex>=0 ? s.options[s.selectedIndex].dataset.setName : (fs.set_name||'—'); })(),
       setCode: (function(){ var s=document.getElementById('fCardNum'); return s && s.selectedIndex>=0 ? s.options[s.selectedIndex].dataset.setCode : (fs.set_code||'—'); })(),
-      cardNumber: (function(){ var s=document.getElementById('fCardNum'); return s && s.selectedIndex>=0 ? s.value : (fs.set_code||'—'); })(),
-      rarity: document.getElementById('fRarity').value,
-      condition: document.getElementById('fCondition').value,
+      cardNumber: selectedCardNum,
+      rarity: selectedRarity,
+      condition: selectedCondition,
       edition: document.getElementById('fEdition').value,
       qty: parseInt(document.getElementById('fQty').value)||1,
       price: 0,
@@ -1471,6 +1533,21 @@ window.onload = function() {
     renderTable();
   };
 
+  // Fix #11: Quick filters
+  var quickFilterActive = null;
+  window.quickFilter = function(type) {
+    quickFilterActive = quickFilterActive === type ? null : type;
+    currentPage = 1;
+    renderTable();
+    
+    if (quickFilterActive) {
+      var label = type === 'notInDecks' ? '— Not in Decks' : '— Recently Added';
+      toast('Filter: ' + label);
+    } else {
+      toast('Filter cleared');
+    }
+  };
+
   // Sort
   window.sortBy = function(col) {
     if (sortCol === col) {
@@ -1522,6 +1599,19 @@ window.onload = function() {
 
   function filteredCards() {
     var base = cards;
+    
+    // Fix #11: Quick filters
+    if (quickFilterActive === 'notInDecks') {
+      base = base.filter(function(e) {
+        return countCardInDecks(e.name) === 0;
+      });
+    } else if (quickFilterActive === 'recent') {
+      var sevenDaysAgo = Date.now() - (7 * 24 * 60 * 60 * 1000);
+      base = base.filter(function(e) {
+        return e.addedAt && e.addedAt >= sevenDaysAgo;
+      });
+    }
+    
     // Type filter (Monsters / Spells / Traps)
     if (collTypeFilter) {
       base = base.filter(function(e) {
@@ -1708,6 +1798,143 @@ window.onload = function() {
     a.href = URL.createObjectURL(new Blob([[h].concat(rows).join('\r\n')],{type:'text/csv'}));
     a.download = 'yugioh_collection.csv'; a.click();
     toast('CSV exported!');
+  };
+
+  // Fix #7: Backup/Restore functionality
+  window.downloadBackup = function() {
+    if (!activeProfileId) {
+      toast('No active profile to backup');
+      return;
+    }
+    
+    var backup = {
+      version: '1.0',
+      exportDate: new Date().toISOString(),
+      profileName: activeProfileName,
+      profileId: activeProfileId,
+      cards: cards.map(function(c) {
+        return {
+          name: c.name, type: c.type, race: c.race, level: c.level,
+          cardImageId: c.cardImageId, attribute: c.attribute, archetype: c.archetype,
+          atk: c.atk, def: c.def, setName: c.setName, setCode: c.setCode,
+          cardNumber: c.cardNumber, rarity: c.rarity, condition: c.condition,
+          edition: c.edition, qty: c.qty, price: c.price, notes: c.notes,
+          addedAt: c.addedAt
+        };
+      }),
+      decks: savedDecks.map(function(d) {
+        return {
+          name: d.name, main: d.main, extra: d.extra, side: d.side,
+          mainCount: d.mainCount, extraCount: d.extraCount, sideCount: d.sideCount,
+          savedAt: d.savedAt
+        };
+      }),
+      wishlist: wishlist.map(function(w) {
+        return {
+          name: w.name, notes: w.notes, priority: w.priority, addedAt: w.addedAt
+        };
+      }),
+      theme: document.documentElement.getAttribute('data-theme') || ''
+    };
+    
+    var json = JSON.stringify(backup, null, 2);
+    var blob = new Blob([json], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'yugioh_backup_' + activeProfileName.replace(/[^a-z0-9]/gi, '_') + '_' + new Date().toISOString().split('T')[0] + '.json';
+    a.click();
+    toast('Backup downloaded! (' + cards.length + ' cards, ' + savedDecks.length + ' decks)');
+  };
+
+  window.restoreBackup = function(input) {
+    var file = input.files[0];
+    if (!file) return;
+    
+    var confirmed = confirm(
+      'RESTORE BACKUP\n\n' +
+      'This will ADD the backup data to your current profile.\n' +
+      'Your existing data will NOT be deleted.\n\n' +
+      'Continue?'
+    );
+    
+    if (!confirmed) {
+      input.value = '';
+      return;
+    }
+    
+    requireAuth(function() {
+      if (!activeProfileId) {
+        toast('No active profile');
+        input.value = '';
+        return;
+      }
+      
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          var backup = JSON.parse(e.target.result);
+          
+          if (!backup.version || !backup.cards) {
+            toast('Invalid backup file format');
+            input.value = '';
+            return;
+          }
+          
+          toast('Restoring backup...');
+          
+          var promises = [];
+          var cardsAdded = 0;
+          var decksAdded = 0;
+          var wishlistAdded = 0;
+          
+          // Restore cards
+          backup.cards.forEach(function(card) {
+            delete card.fid; // Remove old ID
+            promises.push(
+              col.add(card).then(function() { cardsAdded++; })
+            );
+          });
+          
+          // Restore decks
+          backup.decks.forEach(function(deck) {
+            delete deck.did; // Remove old ID
+            promises.push(
+              db.collection('profiles').doc(activeProfileId).collection('decks').add(deck)
+                .then(function() { decksAdded++; })
+            );
+          });
+          
+          // Restore wishlist
+          if (backup.wishlist) {
+            backup.wishlist.forEach(function(item) {
+              delete item.wid; // Remove old ID
+              promises.push(
+                db.collection('profiles').doc(activeProfileId).collection('wishlist').add(item)
+                  .then(function() { wishlistAdded++; })
+              );
+            });
+          }
+          
+          Promise.all(promises).then(function() {
+            toast('Backup restored! ' + cardsAdded + ' cards, ' + decksAdded + ' decks, ' + wishlistAdded + ' wishlist items');
+            input.value = '';
+            
+            // Apply theme if present
+            if (backup.theme) {
+              applyTheme(backup.theme);
+            }
+          }).catch(function(err) {
+            toast('Restore error: ' + err.message);
+            input.value = '';
+          });
+          
+        } catch (err) {
+          toast('Failed to parse backup file: ' + err.message);
+          input.value = '';
+        }
+      };
+      reader.readAsText(file);
+    });
   };
 
   window.confirmRemoveAllCards = function() {
@@ -2179,12 +2406,35 @@ window.onload = function() {
       var count = deck[zone].reduce(function(s,d){ return s+d.qty; }, 0);
       var countEl = document.getElementById(zone + 'Count');
       countEl.textContent = count;
+      
+      // Fix #4: Deck size validation with visual indicators
       if (zone === 'main') {
-        countEl.className = 'deck-zone-count' + (count > 0 ? ' ok' : '');
+        if (count >= 40 && count <= 60) {
+          countEl.className = 'deck-zone-count ok';
+          countEl.title = 'Valid deck size (40-60 cards)';
+        } else if (count > 0) {
+          countEl.className = 'deck-zone-count warn';
+          countEl.title = count < 40 ? 'Too few cards (minimum 40)' : 'Too many cards (maximum 60)';
+        } else {
+          countEl.className = 'deck-zone-count';
+          countEl.title = '';
+        }
       } else if (zone === 'extra') {
-        countEl.className = 'deck-zone-count' + (count <= 15 ? '' : ' warn');
+        if (count <= 15) {
+          countEl.className = 'deck-zone-count' + (count > 0 ? ' ok' : '');
+          countEl.title = count > 0 ? 'Valid extra deck size (0-15 cards)' : '';
+        } else {
+          countEl.className = 'deck-zone-count warn';
+          countEl.title = 'Too many cards (maximum 15)';
+        }
       } else {
-        countEl.className = 'deck-zone-count' + (count <= 15 ? '' : ' warn');
+        if (count <= 15) {
+          countEl.className = 'deck-zone-count' + (count > 0 ? ' ok' : '');
+          countEl.title = count > 0 ? 'Valid side deck size (0-15 cards)' : '';
+        } else {
+          countEl.className = 'deck-zone-count warn';
+          countEl.title = 'Too many cards (maximum 15)';
+        }
       }
       if (!deck[zone].length) {
         el.innerHTML = '<div class="deck-drop-target">Search above to add cards</div>';
