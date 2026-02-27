@@ -789,31 +789,41 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <!-- Card Type Distribution -->
           <div class="chart-container">
             <div class="chart-title">Card Type Distribution</div>
-            <canvas id="typeChart" width="400" height="300"></canvas>
+            <div style="position:relative;height:300px">
+              <canvas id="typeChart"></canvas>
+            </div>
           </div>
 
           <!-- Rarity Distribution -->
           <div class="chart-container">
             <div class="chart-title">Rarity Distribution</div>
-            <canvas id="rarityChart" width="400" height="300"></canvas>
+            <div style="position:relative;height:300px">
+              <canvas id="rarityChart"></canvas>
+            </div>
           </div>
 
           <!-- Condition Distribution -->
           <div class="chart-container">
             <div class="chart-title">Card Condition</div>
-            <canvas id="conditionChart" width="400" height="300"></canvas>
+            <div style="position:relative;height:300px">
+              <canvas id="conditionChart"></canvas>
+            </div>
           </div>
 
           <!-- Top Archetypes -->
           <div class="chart-container">
             <div class="chart-title">Top 10 Archetypes</div>
-            <canvas id="archetypeChart" width="400" height="300"></canvas>
+            <div style="position:relative;height:300px">
+              <canvas id="archetypeChart"></canvas>
+            </div>
           </div>
 
           <!-- Collection Growth -->
           <div class="chart-container" style="grid-column: span 2">
             <div class="chart-title">Collection Growth Over Time</div>
-            <canvas id="growthChart" width="800" height="300"></canvas>
+            <div style="position:relative;height:300px">
+              <canvas id="growthChart"></canvas>
+            </div>
           </div>
 
         </div>
@@ -2875,6 +2885,13 @@ window.onload = function() {
       return;
     }
     
+    // Check if Chart.js is loaded
+    if (typeof Chart === 'undefined') {
+      console.error('Chart.js not loaded');
+      toast('Error: Chart library not loaded');
+      return;
+    }
+    
     // Summary statistics
     var uniqueCards = cards.length;
     var totalCards = cards.reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
@@ -2885,17 +2902,28 @@ window.onload = function() {
     document.getElementById('stat-total-decks').textContent = savedDecks.length;
     document.getElementById('stat-avg-qty').textContent = avgQty;
     
-    // Render all charts
-    renderTypeChart();
-    renderRarityChart();
-    renderConditionChart();
-    renderArchetypeChart();
-    renderGrowthChart();
-    renderTopCardsTable();
-    renderDeckStatsTable();
+    // Render all charts with error handling
+    try {
+      renderTypeChart();
+      renderRarityChart();
+      renderConditionChart();
+      renderArchetypeChart();
+      renderGrowthChart();
+      renderTopCardsTable();
+      renderDeckStatsTable();
+    } catch (err) {
+      console.error('Error rendering statistics:', err);
+      toast('Error rendering statistics: ' + err.message);
+    }
   }
   
   function renderTypeChart() {
+    var canvas = document.getElementById('typeChart');
+    if (!canvas) {
+      console.error('typeChart canvas not found');
+      return;
+    }
+    
     var types = { 'Monsters': 0, 'Spells': 0, 'Traps': 0 };
     cards.forEach(function(c) {
       var t = (c.type || '').toLowerCase();
@@ -2932,6 +2960,12 @@ window.onload = function() {
   }
   
   function renderRarityChart() {
+    var canvas = document.getElementById('rarityChart');
+    if (!canvas) {
+      console.error('rarityChart canvas not found');
+      return;
+    }
+    
     var rarities = {};
     cards.forEach(function(c) {
       var r = c.rarity || 'Unknown';
@@ -2977,6 +3011,12 @@ window.onload = function() {
   }
   
   function renderConditionChart() {
+    var canvas = document.getElementById('conditionChart');
+    if (!canvas) {
+      console.error('conditionChart canvas not found');
+      return;
+    }
+    
     var conditions = {};
     cards.forEach(function(c) {
       var cond = c.condition || 'Unknown';
@@ -3011,6 +3051,12 @@ window.onload = function() {
   }
   
   function renderArchetypeChart() {
+    var canvas = document.getElementById('archetypeChart');
+    if (!canvas) {
+      console.error('archetypeChart canvas not found');
+      return;
+    }
+    
     var archetypes = {};
     cards.forEach(function(c) {
       var arch = c.archetype;
@@ -3058,6 +3104,12 @@ window.onload = function() {
   }
   
   function renderGrowthChart() {
+    var canvas = document.getElementById('growthChart');
+    if (!canvas) {
+      console.error('growthChart canvas not found');
+      return;
+    }
+    
     var dateGroups = {};
     cards.forEach(function(c) {
       if (c.addedAt) {
@@ -3471,7 +3523,12 @@ window.onload = function() {
       document.getElementById('pane-' + t).classList.toggle('active', t === tab);
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
-    if (tab === 'stats') renderStats();
+    if (tab === 'stats') {
+      // Delay to ensure canvas elements are visible
+      setTimeout(function() {
+        renderStats();
+      }, 100);
+    }
     if (tab === 'decks') renderSavedDecks();
     if (tab === 'wishlist') renderWishlist();
     if (tab === 'suggestions') {
