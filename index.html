@@ -632,7 +632,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
         <span id="deckTotalCount" style="font-family:'Cinzel',serif;font-size:11px;color:var(--silver-dim);letter-spacing:1px">0 / 40+ cards</span>
         <input type="text" id="deckName" placeholder="Deck name..." style="background:rgba(12,3,3,0.8);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:'Crimson Pro',serif;font-size:14px;padding:6px 12px;outline:none;width:180px">
-        <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
+        <button class="btn btn-gold" id="saveDeckBtn" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
+        <button class="btn btn-gold" id="saveAsNewBtn" style="padding:8px 16px;font-size:9px;display:none" onclick="saveAsNewDeck()">&#x2795; Save as New</button>
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export .ydk</button>
         <label class="btn" style="padding:8px 16px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import a .ydk file">&#8593; Import .ydk<input type="file" id="ydkImportInput" accept=".ydk,.txt" style="display:none" onchange="importYdk(this)"></label>
         <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
@@ -1572,6 +1573,7 @@ window.onload = function() {
 
   // ── Deck Builder ───────────────────────────────────────────
   var deck = { main: [], extra: [], side: [] };
+  var loadedDeckId = null; // Track which saved deck is currently loaded
 
   var extraTypes = ['fusion','synchro','xyz','link'];
   function getDeckZone(type) {
@@ -1739,7 +1741,9 @@ window.onload = function() {
 
   window.clearDeck = function() {
     deck = { main: [], extra: [], side: [] };
+    loadedDeckId = null; // Reset loaded deck tracking
     renderDeck();
+    updateSaveButton(); // Update button text back to "Save Deck"
     toast('Deck cleared');
   };
 
@@ -1947,10 +1951,39 @@ window.onload = function() {
         savedAt: Date.now()
       };
       if (!activeProfileId) { toast('No profile selected'); return; }
-      db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData).then(function() {
-        toast('Deck saved: ' + name);
-      }).catch(function(e){ toast('Save failed: ' + e.message); });
+      
+      // If we have a loadedDeckId, update the existing deck
+      if (loadedDeckId) {
+        db.collection('profiles').doc(activeProfileId).collection('decks').doc(loadedDeckId).update(deckData).then(function() {
+          toast('Deck updated: ' + name);
+        }).catch(function(e){ toast('Update failed: ' + e.message); });
+      } else {
+        // Otherwise, create a new deck
+        db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData).then(function() {
+          toast('Deck saved: ' + name);
+        }).catch(function(e){ toast('Save failed: ' + e.message); });
+      }
     });
+  };
+
+  // Update the save button text based on whether a deck is loaded
+  function updateSaveButton() {
+    var btn = document.getElementById('saveDeckBtn');
+    var saveAsNewBtn = document.getElementById('saveAsNewBtn');
+    if (loadedDeckId) {
+      btn.innerHTML = '&#x21bb; Update Deck';
+      saveAsNewBtn.style.display = 'inline-block';
+    } else {
+      btn.innerHTML = '&#x2713; Save Deck';
+      saveAsNewBtn.style.display = 'none';
+    }
+  }
+
+  // Save current deck as a new deck (creates a copy)
+  window.saveAsNewDeck = function() {
+    loadedDeckId = null; // Clear the loaded deck ID
+    updateSaveButton(); // Update button text
+    saveDeck(); // Save as new
   };
 
   // ── Load saved decks from Firestore ───────────────────────
@@ -2064,7 +2097,9 @@ window.onload = function() {
     deck.extra = (d.extra || []).slice();
     deck.side  = (d.side  || []).slice();
     document.getElementById('deckName').value = d.name;
+    loadedDeckId = d.did; // Track this deck for updating
     renderDeck();
+    updateSaveButton(); // Update button text
     switchTab('collection');
     // Scroll to deck builder
     setTimeout(function(){
