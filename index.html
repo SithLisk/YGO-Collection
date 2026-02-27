@@ -354,6 +354,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .deck-detail-breakdown .breakdown-item { display: flex; align-items: center; gap: 6px; }
 .deck-detail-breakdown .breakdown-label { color: var(--silver-dim); }
 .deck-detail-breakdown b { color: var(--gold-pale); font-family: 'Cinzel', serif; }
+.deck-detail-type-header { font-family: 'Cinzel', serif; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--silver); margin-top: 20px; margin-bottom: 10px; padding-left: 4px; border-left: 3px solid var(--gold-dim); }
 .deck-detail-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
 @media(max-width:768px) { .deck-detail-cards { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 10px; } }
 .deck-detail-card { position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; border-radius: 8px; overflow: hidden; }
@@ -1479,23 +1480,26 @@ window.onload = function() {
       var zoneDiv = document.createElement('div');
       zoneDiv.className = 'deck-detail-zone';
       
-      // Calculate type counts
-      var monsterCount = 0;
-      var spellCount = 0;
-      var trapCount = 0;
+      // Separate cards by type
+      var monsters = [];
+      var spells = [];
+      var traps = [];
       
       zoneCards.forEach(function(card) {
-        var qty = card.qty || 1;
         var type = (card.type || '').toLowerCase();
-        
         if (type.includes('monster')) {
-          monsterCount += qty;
+          monsters.push(card);
         } else if (type.includes('spell')) {
-          spellCount += qty;
+          spells.push(card);
         } else if (type.includes('trap')) {
-          trapCount += qty;
+          traps.push(card);
         }
       });
+      
+      // Calculate type counts
+      var monsterCount = monsters.reduce(function(sum, c) { return sum + c.qty; }, 0);
+      var spellCount = spells.reduce(function(sum, c) { return sum + c.qty; }, 0);
+      var trapCount = traps.reduce(function(sum, c) { return sum + c.qty; }, 0);
       
       var header = document.createElement('div');
       header.className = 'deck-detail-zone-header';
@@ -1514,43 +1518,59 @@ window.onload = function() {
       zoneDiv.appendChild(header);
       zoneDiv.appendChild(breakdown);
       
-      var cardsGrid = document.createElement('div');
-      cardsGrid.className = 'deck-detail-cards';
+      // Function to render a type section
+      function renderTypeSection(cards, typeName) {
+        if (!cards.length) return;
+        
+        var typeHeader = document.createElement('div');
+        typeHeader.className = 'deck-detail-type-header';
+        typeHeader.textContent = typeName;
+        zoneDiv.appendChild(typeHeader);
+        
+        var cardsGrid = document.createElement('div');
+        cardsGrid.className = 'deck-detail-cards';
+        
+        cards.forEach(function(card) {
+          var cardDiv = document.createElement('div');
+          cardDiv.className = 'deck-detail-card';
+          cardDiv.onclick = function() { openCardModal(card.name); };
+          
+          var img = document.createElement('img');
+          img.className = 'deck-detail-card-img';
+          img.alt = card.name;
+          
+          // Fetch card image from API
+          fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+              if (data && data.data && data.data[0] && data.data[0].card_images && data.data[0].card_images[0]) {
+                img.src = data.data[0].card_images[0].image_url_small;
+              }
+            })
+            .catch(function() {
+              // Image load failed, leave placeholder
+            });
+          
+          cardDiv.appendChild(img);
+          
+          if (card.qty > 1) {
+            var qtyBadge = document.createElement('div');
+            qtyBadge.className = 'deck-detail-card-qty';
+            qtyBadge.textContent = 'x' + card.qty;
+            cardDiv.appendChild(qtyBadge);
+          }
+          
+          cardsGrid.appendChild(cardDiv);
+        });
+        
+        zoneDiv.appendChild(cardsGrid);
+      }
       
-      zoneCards.forEach(function(card) {
-        var cardDiv = document.createElement('div');
-        cardDiv.className = 'deck-detail-card';
-        cardDiv.onclick = function() { openCardModal(card.name); };
-        
-        var img = document.createElement('img');
-        img.className = 'deck-detail-card-img';
-        img.alt = card.name;
-        
-        // Fetch card image from API
-        fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
-          .then(function(r) { return r.ok ? r.json() : null; })
-          .then(function(data) {
-            if (data && data.data && data.data[0] && data.data[0].card_images && data.data[0].card_images[0]) {
-              img.src = data.data[0].card_images[0].image_url_small;
-            }
-          })
-          .catch(function() {
-            // Image load failed, leave placeholder
-          });
-        
-        cardDiv.appendChild(img);
-        
-        if (card.qty > 1) {
-          var qtyBadge = document.createElement('div');
-          qtyBadge.className = 'deck-detail-card-qty';
-          qtyBadge.textContent = 'x' + card.qty;
-          cardDiv.appendChild(qtyBadge);
-        }
-        
-        cardsGrid.appendChild(cardDiv);
-      });
+      // Render sections in order: Monsters, Spells, Traps
+      renderTypeSection(monsters, 'Monsters');
+      renderTypeSection(spells, 'Spells');
+      renderTypeSection(traps, 'Traps');
       
-      zoneDiv.appendChild(cardsGrid);
       content.appendChild(zoneDiv);
     });
     
