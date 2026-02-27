@@ -110,8 +110,8 @@
   --silver: #b0b0b0;
   --silver-dim: #707070;
   --white: #f5f5f5;
-  --border: rgba(224,224,224,0.15);
-  --glow: 0 0 12px rgba(240,240,240,0.1);
+  --border: rgba(224,224,224,0.25);
+  --glow: 0 0 16px rgba(240,240,240,0.25);
 }
 /* Dark: pure black background with subtle white glow */
 
@@ -168,11 +168,11 @@
 [data-theme="dark"] #cardModal > div,
 [data-theme="dark"] .saved-deck-card { background: rgba(10,10,10,0.95); }
 [data-theme="dark"] .panel-hdr,
-[data-theme="dark"] .deck-hdr { background: rgba(0,0,0,0.98); border-bottom-color: rgba(224,224,224,0.15); }
-[data-theme="dark"] .deck-zone { background: rgba(10,10,10,0.7); border-color: rgba(224,224,224,0.1); }
+[data-theme="dark"] .deck-hdr { background: rgba(0,0,0,0.98); border-bottom-color: rgba(224,224,224,0.25); }
+[data-theme="dark"] .deck-zone { background: rgba(10,10,10,0.7); border-color: rgba(224,224,224,0.25); }
 [data-theme="dark"] #profileScreen > div:first-child { background: rgba(0,0,0,0.98); }
 [data-theme="dark"] .ps-card { background: linear-gradient(160deg,rgba(10,10,10,0.9),rgba(0,0,0,0.95)); }
-[data-theme="dark"] .tab-nav { background: rgba(0,0,0,0.98); border-bottom-color: rgba(224,224,224,0.1); }
+[data-theme="dark"] .tab-nav { background: rgba(0,0,0,0.98); border-bottom-color: rgba(224,224,224,0.25); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -496,11 +496,11 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <div style="display:flex;align-items:center;gap:10px">
       <span style="color:var(--silver-dim);font-size:9px;letter-spacing:1px">Changes sync automatically across all devices</span>
       <select class="theme-select" id="themeSelect" onchange="applyTheme(this.value)" title="Color theme">
-        <option value="">&#127756; Carnation</option>
-        <option value="dusk">&#127754; Dusk</option>
-        <option value="void">&#127807; Void</option>
-        <option value="radiance">&#9788; Radiance</option>
-        <option value="dark">&#127763; Dark</option>
+        <option value="">Carnation</option>
+        <option value="dusk">Dusk</option>
+        <option value="void">Void</option>
+        <option value="radiance">Radiance</option>
+        <option value="dark">Dark</option>
 
       </select>
       <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
