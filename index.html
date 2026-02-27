@@ -346,6 +346,28 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .deck-card-list-item .qty-tag { font-family: 'Cinzel', serif; font-size: 10px; color: var(--gold-dim); flex-shrink: 0; margin-left: 8px; }
 .deck-empty { text-align: center; padding: 60px 20px; font-family: 'Cinzel', serif; font-size: 12px; letter-spacing: 2px; color: var(--silver-dim); text-transform: uppercase; }
 
+/* ── Deck Suggestions ──────────────────────────────────────── */
+.suggestions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; padding: 20px 0; }
+.suggestion-card { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 12px; padding: 20px; transition: border-color 0.2s, box-shadow 0.2s; }
+.suggestion-card:hover { border-color: rgba(240,192,64,0.4); box-shadow: 0 0 16px rgba(160,30,30,0.3); }
+.suggestion-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px; }
+.suggestion-name { font-family: 'Cinzel', serif; font-size: 15px; color: var(--gold-pale); letter-spacing: 1px; flex: 1; }
+.suggestion-match { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--gold); }
+.suggestion-match-label { font-size: 9px; color: var(--silver-dim); letter-spacing: 1px; text-transform: uppercase; }
+.suggestion-info { font-size: 11px; color: var(--silver-dim); margin-bottom: 14px; }
+.suggestion-meta { display: flex; gap: 16px; margin-bottom: 14px; font-size: 11px; }
+.suggestion-meta-item { display: flex; flex-direction: column; gap: 2px; }
+.suggestion-meta-label { color: var(--silver-dim); font-size: 9px; letter-spacing: 1px; text-transform: uppercase; }
+.suggestion-meta-value { color: var(--gold-pale); font-family: 'Cinzel', serif; font-weight: 600; }
+.suggestion-missing { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.suggestion-missing-label { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+.suggestion-missing-list { font-size: 11px; color: var(--silver); max-height: 80px; overflow-y: auto; }
+.suggestion-missing-item { padding: 2px 0; }
+.suggestion-actions { display: flex; gap: 8px; margin-top: 14px; }
+.suggestion-btn { font-family: 'Cinzel', serif; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 6px; padding: 8px 0; cursor: pointer; transition: all 0.2s; flex: 1; text-align: center; border: 1px solid var(--border); }
+.suggestion-btn.view { background: linear-gradient(135deg, var(--gold-dim), var(--gold)); color: var(--void); border-color: transparent; }
+.suggestion-btn.view:hover { opacity: 0.85; }
+
 /* ── Deck Detail Modal ────────────────────────────────────── */
 .deck-detail-zone { margin-bottom: 28px; }
 .deck-detail-zone:last-child { margin-bottom: 0; }
@@ -567,6 +589,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   <div class="tab-nav">
     <button class="tab-btn active" onclick="switchTab('collection')" id="tab-collection">&#9876; Collection</button>
     <button class="tab-btn" onclick="switchTab('decks')" id="tab-decks">&#x2261; Saved Decks</button>
+    <button class="tab-btn" onclick="switchTab('suggestions')" id="tab-suggestions">&#x1F4A1; Deck Suggestions</button>
   </div>
 
   <!-- Collection Tab -->
@@ -707,6 +730,33 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         </div>
       </div>
       <div class="saved-decks-grid" id="savedDecksGrid"></div>
+    </div>
+  </div>
+
+  <!-- Deck Suggestions Tab -->
+  <div class="tab-pane" id="pane-suggestions">
+    <div class="coll-panel">
+      <div class="panel-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase">
+          &#x1F4A1; Deck Suggestions
+          <span id="suggestionsCount" style="font-size:10px;color:var(--silver-dim);margin-left:10px"></span>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <button id="refreshSuggestionsBtn" onclick="loadDeckSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;background:rgba(40,80,160,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">
+            &#x21bb; Refresh Decks
+          </button>
+          <select id="matchFilter" onchange="filterSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:6px 10px;cursor:pointer">
+            <option value="0">All Decks</option>
+            <option value="50">50%+ Match</option>
+            <option value="75">75%+ Match</option>
+            <option value="90">90%+ Match</option>
+          </select>
+        </div>
+      </div>
+      <div id="suggestionsLoading" style="text-align:center;padding:60px 20px;font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--silver-dim);text-transform:uppercase;display:none">
+        Loading deck suggestions...
+      </div>
+      <div class="suggestions-grid" id="suggestionsGrid"></div>
     </div>
   </div>
 
@@ -2148,6 +2198,235 @@ window.onload = function() {
   // Duplicate feature replaced with inline +/- controls
 
 
+  // ══ Deck Suggestions ════════════════════════════════════════
+  var allSuggestions = [];
+  var filteredSuggestions = [];
+
+  window.loadDeckSuggestions = function() {
+    if (!authed) {
+      toast('Please unlock to view suggestions');
+      return;
+    }
+    
+    document.getElementById('suggestionsLoading').style.display = 'block';
+    document.getElementById('suggestionsGrid').innerHTML = '';
+    
+    // Fetch random popular decks from YGOPRODeck API
+    fetch('https://db.ygoprodeck.com/api/v7/randomdeck.php?num=20')
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .then(function(data) {
+        if (!data || !data.decks) {
+          document.getElementById('suggestionsLoading').textContent = 'Failed to load decks';
+          return;
+        }
+        
+        allSuggestions = data.decks.map(function(deck) {
+          return analyzeDeckMatch(deck);
+        }).filter(function(d) { return d !== null; });
+        
+        // Sort by match percentage
+        allSuggestions.sort(function(a, b) { return b.matchPercent - a.matchPercent; });
+        
+        filteredSuggestions = allSuggestions.slice();
+        document.getElementById('suggestionsLoading').style.display = 'none';
+        renderSuggestions();
+      })
+      .catch(function(err) {
+        console.error('Failed to load suggestions:', err);
+        document.getElementById('suggestionsLoading').textContent = 'Failed to load decks. Try again.';
+      });
+  };
+
+  function analyzeDeckMatch(deck) {
+    if (!deck || !deck.main) return null;
+    
+    var deckCards = {};
+    var totalCards = 0;
+    
+    // Count all cards in the deck
+    ['main', 'extra', 'side'].forEach(function(zone) {
+      if (!deck[zone]) return;
+      deck[zone].forEach(function(cardName) {
+        deckCards[cardName] = (deckCards[cardName] || 0) + 1;
+        totalCards++;
+      });
+    });
+    
+    // Check what we own
+    var ownedCount = 0;
+    var missingCards = [];
+    
+    Object.keys(deckCards).forEach(function(cardName) {
+      var needed = deckCards[cardName];
+      var owned = cards.filter(function(c) { 
+        return c.name === cardName; 
+      }).reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
+      
+      if (owned >= needed) {
+        ownedCount += needed;
+      } else {
+        ownedCount += owned;
+        missingCards.push({ name: cardName, need: needed - owned });
+      }
+    });
+    
+    var matchPercent = totalCards > 0 ? Math.round((ownedCount / totalCards) * 100) : 0;
+    
+    return {
+      name: deck.name || 'Unnamed Deck',
+      main: deck.main || [],
+      extra: deck.extra || [],
+      side: deck.side || [],
+      totalCards: totalCards,
+      ownedCount: ownedCount,
+      matchPercent: matchPercent,
+      missingCards: missingCards
+    };
+  }
+
+  window.filterSuggestions = function() {
+    var minMatch = parseInt(document.getElementById('matchFilter').value);
+    filteredSuggestions = allSuggestions.filter(function(d) {
+      return d.matchPercent >= minMatch;
+    });
+    renderSuggestions();
+  };
+
+  function renderSuggestions() {
+    var grid = document.getElementById('suggestionsGrid');
+    
+    if (!filteredSuggestions.length) {
+      grid.innerHTML = '<div class="deck-empty">No deck suggestions found. Try adjusting filters or refresh.</div>';
+      document.getElementById('suggestionsCount').textContent = '0 decks';
+      return;
+    }
+    
+    document.getElementById('suggestionsCount').textContent = filteredSuggestions.length + ' deck' + (filteredSuggestions.length !== 1 ? 's' : '');
+    
+    grid.innerHTML = '';
+    filteredSuggestions.forEach(function(suggestion) {
+      var card = document.createElement('div');
+      card.className = 'suggestion-card';
+      
+      var header = document.createElement('div');
+      header.className = 'suggestion-header';
+      
+      var name = document.createElement('div');
+      name.className = 'suggestion-name';
+      name.textContent = suggestion.name;
+      header.appendChild(name);
+      
+      var matchDiv = document.createElement('div');
+      matchDiv.style.textAlign = 'right';
+      var matchPercent = document.createElement('div');
+      matchPercent.className = 'suggestion-match';
+      matchPercent.textContent = suggestion.matchPercent + '%';
+      var matchLabel = document.createElement('div');
+      matchLabel.className = 'suggestion-match-label';
+      matchLabel.textContent = 'Match';
+      matchDiv.appendChild(matchPercent);
+      matchDiv.appendChild(matchLabel);
+      header.appendChild(matchDiv);
+      
+      card.appendChild(header);
+      
+      var info = document.createElement('div');
+      info.className = 'suggestion-info';
+      info.textContent = 'You own ' + suggestion.ownedCount + ' of ' + suggestion.totalCards + ' cards';
+      card.appendChild(info);
+      
+      var meta = document.createElement('div');
+      meta.className = 'suggestion-meta';
+      
+      var mainItem = document.createElement('div');
+      mainItem.className = 'suggestion-meta-item';
+      mainItem.innerHTML = '<div class="suggestion-meta-label">Main</div><div class="suggestion-meta-value">' + (suggestion.main ? suggestion.main.length : 0) + '</div>';
+      meta.appendChild(mainItem);
+      
+      var extraItem = document.createElement('div');
+      extraItem.className = 'suggestion-meta-item';
+      extraItem.innerHTML = '<div class="suggestion-meta-label">Extra</div><div class="suggestion-meta-value">' + (suggestion.extra ? suggestion.extra.length : 0) + '</div>';
+      meta.appendChild(extraItem);
+      
+      var sideItem = document.createElement('div');
+      sideItem.className = 'suggestion-meta-item';
+      sideItem.innerHTML = '<div class="suggestion-meta-label">Side</div><div class="suggestion-meta-value">' + (suggestion.side ? suggestion.side.length : 0) + '</div>';
+      meta.appendChild(sideItem);
+      
+      card.appendChild(meta);
+      
+      if (suggestion.missingCards.length > 0) {
+        var missing = document.createElement('div');
+        missing.className = 'suggestion-missing';
+        
+        var missingLabel = document.createElement('div');
+        missingLabel.className = 'suggestion-missing-label';
+        missingLabel.textContent = 'Missing Cards (' + suggestion.missingCards.length + ' unique)';
+        missing.appendChild(missingLabel);
+        
+        var missingList = document.createElement('div');
+        missingList.className = 'suggestion-missing-list';
+        suggestion.missingCards.slice(0, 10).forEach(function(m) {
+          var item = document.createElement('div');
+          item.className = 'suggestion-missing-item';
+          item.textContent = '• ' + m.name + (m.need > 1 ? ' x' + m.need : '');
+          missingList.appendChild(item);
+        });
+        if (suggestion.missingCards.length > 10) {
+          var more = document.createElement('div');
+          more.className = 'suggestion-missing-item';
+          more.style.fontStyle = 'italic';
+          more.textContent = '+ ' + (suggestion.missingCards.length - 10) + ' more...';
+          missingList.appendChild(more);
+        }
+        missing.appendChild(missingList);
+        card.appendChild(missing);
+      }
+      
+      var actions = document.createElement('div');
+      actions.className = 'suggestion-actions';
+      
+      var viewBtn = document.createElement('button');
+      viewBtn.className = 'suggestion-btn view';
+      viewBtn.textContent = 'View Full Deck';
+      viewBtn.onclick = function() { viewSuggestedDeck(suggestion); };
+      actions.appendChild(viewBtn);
+      
+      card.appendChild(actions);
+      grid.appendChild(card);
+    });
+  }
+
+  window.viewSuggestedDeck = function(suggestion) {
+    // Convert to format compatible with deck detail modal
+    var deckData = {
+      name: suggestion.name,
+      main: [],
+      extra: [],
+      side: [],
+      mainCount: suggestion.main ? suggestion.main.length : 0,
+      extraCount: suggestion.extra ? suggestion.extra.length : 0,
+      sideCount: suggestion.side ? suggestion.side.length : 0
+    };
+    
+    // Group cards by name and count quantities
+    ['main', 'extra', 'side'].forEach(function(zone) {
+      var cards = suggestion[zone] || [];
+      var cardMap = {};
+      
+      cards.forEach(function(cardName) {
+        if (!cardMap[cardName]) {
+          cardMap[cardName] = { name: cardName, qty: 0, type: '—' };
+        }
+        cardMap[cardName].qty++;
+      });
+      
+      deckData[zone] = Object.values(cardMap);
+    });
+    
+    openDeckDetailModal(deckData);
+  };
+
   // ── Theme ──────────────────────────────────────────────────
   window.applyTheme = function(theme) {
     document.documentElement.setAttribute('data-theme', theme);
@@ -2222,11 +2501,16 @@ window.onload = function() {
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
-    ['collection','decks'].forEach(function(t) {
+    ['collection','decks','suggestions'].forEach(function(t) {
       document.getElementById('pane-' + t).classList.toggle('active', t === tab);
       document.getElementById('tab-' + t).classList.toggle('active', t === tab);
     });
     if (tab === 'decks') renderSavedDecks();
+    if (tab === 'suggestions') {
+      if (allSuggestions.length === 0) {
+        loadDeckSuggestions();
+      }
+    }
   };
 
   // ── Save deck to Firestore ─────────────────────────────────
