@@ -66,38 +66,63 @@
    --silver #4a4035 on #f8f4ec = 9.2:1 ✓
 ─────────────────────────────────────────────────────────────── */
 [data-theme="ivory"] {
-  --void: #f8f4ec;
-  --deep: #ede8dc;
-  --mid: #d4cbb8;
-  --bright: #a89880;
+  /* Background */
+  --void: #f3efe6;          /* page base */
+  
+  /* Panel Surface (ALL boxes + headers) */
+  --deep: #ffffff;          /* unified panel color */
+
+  /* Input Surface */
+  --mid: #f4ede2;           /* unified input color */
+
+  /* Accents */
+  --bright: #d8cfc2;
   --accent: #8b6f4e;
+
   --gold: #6b4c2a;
   --gold-dim: #a07850;
   --gold-pale: #3d2810;
+
   --silver: #5c4030;
   --silver-dim: #b8a090;
+
   --white: #1a1008;
-  --border: rgba(120, 80, 40, 0.38);
-  --glow: 0 0 20px rgba(130, 80, 30, 0.5);
+
+  --border: rgba(120, 80, 40, 0.25);
+  --glow: 0 0 20px rgba(130, 80, 30, 0.15);
 }
 
 /* ── Ivory theme: content boxes → White ──────────── */
 [data-theme="ivory"] .search-panel,
 [data-theme="ivory"] .sync-bar,
-[data-theme="ivory"] .panel-hdr { background: rgba(255,255,255,0.55); }
-[data-theme="ivory"] .coll-panel { background: rgba(255,255,255,0.55); }
+[data-theme="ivory"] .coll-panel,
 [data-theme="ivory"] .deck-section,
+[data-theme="ivory"] .saved-deck-card,
 [data-theme="ivory"] #pwModal > div,
 [data-theme="ivory"] #newProfileModal > div,
 [data-theme="ivory"] #cardModal > div,
-[data-theme="ivory"] .saved-deck-card { background: rgba(255,255,255,0.55); }
+[data-theme="ivory"] #profileScreen > div:first-child,
+[data-theme="ivory"] .ps-card,
+[data-theme="ivory"] .tab-nav,
 [data-theme="ivory"] .panel-hdr,
-[data-theme="ivory"] .deck-hdr { background: rgba(255,255,255,0.4); }
-[data-theme="ivory"] .deck-zone { background: rgba(255,255,255,0.25); }
-[data-theme="ivory"] #profileScreen > div:first-child { background: rgba(248,244,236,0.96); }
-[data-theme="ivory"] .ps-card { background: linear-gradient(160deg,rgba(255,255,255,0.7),rgba(240,232,210,0.85)); }
-[data-theme="ivory"] .tab-nav { background: rgba(255,255,255,0.4); border-bottom-color: rgba(255,255,255,0.25); }
+[data-theme="ivory"] .deck-hdr,
+[data-theme="ivory"] .deck-zone {
+  background: var(--deep);
+  border-color: var(--border);
+}
 
+/* ── Ivory: ALL inputs unified ─────────────────────────── */
+[data-theme="ivory"] input,
+[data-theme="ivory"] select,
+[data-theme="ivory"] textarea {
+  background: var(--mid);
+  color: var(--white);
+  border: 1px solid var(--border);
+}
+[data-theme="ivory"] input::placeholder,
+[data-theme="ivory"] textarea::placeholder {
+  color: rgba(60,40,25,0.6);
+}
 
 /* ── Dusk theme: content boxes → navy ───────────────────── */
 [data-theme="dusk"] .coll-panel,
@@ -128,7 +153,7 @@
 [data-theme="void"] .tab-nav { background: rgba(2,12,8,0.95); border-bottom-color: rgba(40,160,90,0.25); }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
-  background: var(--void);
+  background-color: var(--void);
   color: var(--white);
   font-family: 'Crimson Pro', Georgia, serif;
   min-height: 100vh;
