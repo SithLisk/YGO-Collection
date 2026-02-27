@@ -92,6 +92,29 @@
 }
 /* Radiance: bg image stays, light content boxes with gold accents */
 
+/* ── Theme: Dark (Pure Black & Amber) ──────────────────────────
+   Background: #000000  Contrast ratios (WCAG AA):
+   --gold #ffa500 on #000000  = 10.4:1 ✓
+   --white #e8e8e8 on #000000 = 16.1:1 ✓
+   --silver #a0a0a0 on #000000= 8.6:1 ✓
+─────────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  --void: #000000;
+  --deep: #0a0a0a;
+  --mid: #1a1a1a;
+  --bright: #2a2a2a;
+  --accent: #ff8c00;
+  --gold: #ffa500;
+  --gold-dim: #cc8400;
+  --gold-pale: #ffcc80;
+  --silver: #a0a0a0;
+  --silver-dim: #606060;
+  --white: #e8e8e8;
+  --border: rgba(255,165,0,0.3);
+  --glow: 0 0 20px rgba(255,140,0,0.4);
+}
+/* Dark: pure black background with amber accents */
+
 .theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; transition:border-color 0.2s; }
 .theme-select option { background:#060606; color:#f0c040; }
 
@@ -136,6 +159,20 @@
 [data-theme="radiance"] #profileScreen > div:first-child { background: rgb(252,250,242); }
 [data-theme="radiance"] .ps-card { background: linear-gradient(160deg,rgb(248,246,240),rgb(255,253,245)); }
 [data-theme="radiance"] .tab-nav { background: rgb(255,253,245); border-bottom-color: rgba(212,175,55,0.25); }
+
+/* ── Dark theme: content boxes → pure black with amber ──────────── */
+[data-theme="dark"] .coll-panel,
+[data-theme="dark"] .deck-section,
+[data-theme="dark"] #pwModal > div,
+[data-theme="dark"] #newProfileModal > div,
+[data-theme="dark"] #cardModal > div,
+[data-theme="dark"] .saved-deck-card { background: rgba(10,10,10,0.95); }
+[data-theme="dark"] .panel-hdr,
+[data-theme="dark"] .deck-hdr { background: rgba(0,0,0,0.98); border-bottom-color: rgba(255,165,0,0.3); }
+[data-theme="dark"] .deck-zone { background: rgba(10,10,10,0.7); border-color: rgba(255,165,0,0.2); }
+[data-theme="dark"] #profileScreen > div:first-child { background: rgba(0,0,0,0.98); }
+[data-theme="dark"] .ps-card { background: linear-gradient(160deg,rgba(10,10,10,0.9),rgba(0,0,0,0.95)); }
+[data-theme="dark"] .tab-nav { background: rgba(0,0,0,0.98); border-bottom-color: rgba(255,165,0,0.25); }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
@@ -463,6 +500,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <option value="dusk">&#127754; Dusk</option>
         <option value="void">&#127807; Void</option>
         <option value="radiance">&#9728; Radiance</option>
+        <option value="dark">&#127763; Dark</option>
 
       </select>
       <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
