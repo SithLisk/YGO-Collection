@@ -158,6 +158,8 @@
 [data-theme="radiance"] .deck-zone { background: rgb(252,250,242); border-color: rgba(212,175,55,0.2); }
 [data-theme="radiance"] #profileScreen > div:first-child { background: rgb(252,250,242); }
 [data-theme="radiance"] .ps-card { background: linear-gradient(160deg,rgb(248,246,240),rgb(255,253,245)); }
+[data-theme="radiance"] .ps-label { color: #2a2416; }
+[data-theme="radiance"] .ps-meta { color: #6a5d48; }
 [data-theme="radiance"] .tab-nav { background: rgb(255,253,245); border-bottom-color: rgba(212,175,55,0.25); }
 
 /* ── Dark theme: content boxes → pure black with white glow ──────────── */
@@ -622,8 +624,8 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <div class="field" id="cardNumField" style="display:none"><label>Card Number</label>
           <select id="fCardNum"></select>
         </div>
-        <button class="btn btn-add" onclick="addToCollection()">+ Add Card</button>
         <button class="btn" style="background:linear-gradient(135deg,var(--gold-dim),var(--gold));color:var(--void);padding:11px 24px" onclick="addSearchedCardToWishlist()">&#9733; Add to Wishlist</button>
+        <button class="btn btn-add" onclick="addToCollection()">+ Add Card</button>
       </div>
     </div>
   </div>
