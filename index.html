@@ -2327,17 +2327,50 @@ window.onload = function() {
             });
           });
           Promise.all(addPromises).then(function() {
-            deck.main  = deckResult.main;
-            deck.extra = deckResult.extra;
-            deck.side  = deckResult.side;
-            var name = file.name.replace(/\.ydk$/i,'').replace(/_/g,' ');
-            document.getElementById('deckName').value = name;
-            renderDeck();
-            var msg = 'Import complete';
-            if (addedCount) msg += ' — ' + addedCount + ' new card(s) added to collection';
-            if (skippedCount) msg += ' — ' + skippedCount + ' not found';
-            toast(msg);
-            input.value = '';
+            // Prepare deck data for saving
+            var deckData = {
+              main: deckResult.main,
+              extra: deckResult.extra,
+              side: deckResult.side,
+              mainCount: deckResult.main.reduce(function(s, c) { return s + c.qty; }, 0),
+              extraCount: deckResult.extra.reduce(function(s, c) { return s + c.qty; }, 0),
+              sideCount: deckResult.side.reduce(function(s, c) { return s + c.qty; }, 0)
+            };
+            
+            // Get deck name from file
+            var defaultName = file.name.replace(/\.ydk$/i, '').replace(/_/g, ' ');
+            var deckName = prompt('Enter a name for this deck:', defaultName);
+            
+            if (!deckName || !deckName.trim()) {
+              toast('Import cancelled - no deck name provided');
+              input.value = '';
+              return;
+            }
+            
+            deckData.name = deckName.trim();
+            deckData.savedAt = Date.now();
+            
+            // Save directly to Firestore
+            if (!activeProfileId) {
+              toast('Error: No active profile');
+              input.value = '';
+              return;
+            }
+            
+            db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData)
+              .then(function() {
+                var msg = 'Deck "' + deckData.name + '" saved';
+                if (addedCount) msg += ' — ' + addedCount + ' new card(s) added to collection';
+                if (skippedCount) msg += ' — ' + skippedCount + ' card(s) not found';
+                toast(msg);
+                input.value = '';
+                // Switch to Saved Decks tab to show the new deck
+                switchTab('decks');
+              })
+              .catch(function(err) {
+                toast('Error saving deck: ' + err.message);
+                input.value = '';
+              });
           });
         }
         fetchBatch();
