@@ -716,6 +716,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <div class="rarity-breakdown" id="rarityBreakdown"></div>
     <div class="exp-bar">
       <button class="btn btn-gold" onclick="exportCSV()">&#8595; Export CSV for Excel</button>
+      <button class="btn btn-gold" onclick="confirmRemoveAllCards()" style="background:linear-gradient(135deg,#b82020,#d62828);margin-left:12px">&#x1F5D1; Remove All Cards</button>
     </div>
   </div>
 
@@ -1675,6 +1676,57 @@ window.onload = function() {
     a.href = URL.createObjectURL(new Blob([[h].concat(rows).join('\r\n')],{type:'text/csv'}));
     a.download = 'yugioh_collection.csv'; a.click();
     toast('CSV exported!');
+  };
+
+  window.confirmRemoveAllCards = function() {
+    if (!cards.length) {
+      toast('Collection is already empty');
+      return;
+    }
+    
+    var cardCount = cards.length;
+    var totalCards = cards.reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
+    
+    var confirmed = confirm(
+      'WARNING: This will permanently delete ALL cards from your collection!\n\n' +
+      'You have ' + cardCount + ' unique cards (' + totalCards + ' total cards).\n\n' +
+      'This action CANNOT be undone!\n\n' +
+      'Are you sure you want to remove all cards?'
+    );
+    
+    if (confirmed) {
+      removeAllCards();
+    }
+  };
+
+  window.removeAllCards = function() {
+    requireAuth(function() {
+      if (!activeProfileId) return;
+      
+      toast('Removing all cards...');
+      
+      var batch = db.batch();
+      var collectionRef = db.collection('profiles').doc(activeProfileId).collection('cards');
+      
+      // Get all cards and delete them in a batch
+      collectionRef.get().then(function(snapshot) {
+        if (snapshot.empty) {
+          toast('Collection already empty');
+          return;
+        }
+        
+        snapshot.forEach(function(doc) {
+          batch.delete(doc.ref);
+        });
+        
+        return batch.commit();
+      }).then(function() {
+        toast('All cards removed from collection');
+      }).catch(function(error) {
+        toast('Error removing cards: ' + error.message);
+        console.error('Error removing all cards:', error);
+      });
+    });
   };
 
   // Test API
