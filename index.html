@@ -758,7 +758,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 
   <!-- Statistics Tab -->
   <div class="tab-pane" id="pane-stats">
-    <div style="background:red;color:white;padding:20px;font-size:20px;text-align:center">STATISTICS TAB LOADED - TEST MESSAGE</div>
     <div class="coll-panel">
       <div class="panel-hdr">
         <div class="panel-ttl">&#128202; Collection Statistics</div>
@@ -861,7 +860,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <button class="btn btn-gold" id="saveDeckBtn" style="padding:8px 16px;font-size:9px" onclick="saveDeck()">&#x2713; Save Deck</button>
         <button class="btn btn-gold" id="saveAsNewBtn" style="padding:8px 16px;font-size:9px;display:none" onclick="saveAsNewDeck()">&#x2795; Save as New</button>
         <button class="btn btn-gold" style="padding:8px 16px;font-size:9px" onclick="exportDeck()">&#8595; Export .ydk</button>
-        <label class="btn" style="padding:8px 16px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import a .ydk file">&#8593; Import .ydk<input type="file" id="ydkImportInput" accept=".ydk,.txt" style="display:none" onchange="importYdk(this)"></label>
+        <label class="btn" style="padding:8px 16px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import .ydk files (multiple allowed)">&#8593; Import .ydk<input type="file" id="ydkImportInput" accept=".ydk,.txt" multiple style="display:none" onchange="importYdk(this)"></label>
         <button class="btn" style="padding:8px 16px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="clearDeck()">Clear</button>
       </div>
     </div>
@@ -2641,137 +2640,162 @@ window.onload = function() {
 
   // ── Import .ydk ────────────────────────────────────────────
   window.importYdk = function(input) {
-    var file = input.files[0];
-    if (!file) return;
+    var files = Array.from(input.files);
+    if (!files.length) return;
+    
     requireAuth(function() {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var lines = e.target.result.replace(/\r/g, '').split('\n');
-        var zone = 'main';
-        // Parse: { zone, cardId, count }
-        var parsed = { main: {}, extra: {}, side: {} }; // cardId -> {zone, count}
-        lines.forEach(function(line) {
-          line = line.trim();
-          if (!line || line[0] === '!' || line.slice(0,2) === '//') return;
-          if (line === '#main')  { zone = 'main';  return; }
-          if (line === '#extra') { zone = 'extra'; return; }
-          if (line === '#side')  { zone = 'side';  return; }
-          if (line[0] === '#') return;
-          if (/^[0-9]+$/.test(line)) {
-            parsed[zone][line] = (parsed[zone][line] || 0) + 1;
-          }
-        });
-        var allIds = [];
-        ['main','extra','side'].forEach(function(z) {
-          Object.keys(parsed[z]).forEach(function(id) { if (allIds.indexOf(id) === -1) allIds.push(id); });
-        });
-        if (!allIds.length) { toast('No card IDs found in .ydk file'); input.value = ''; return; }
-        toast('Fetching ' + allIds.length + ' card(s) from API...');
-        // Fetch all card data from YGOPRODeck by ID
-        var fetched = {};
-        var pending = allIds.slice();
-        function fetchBatch() {
-          if (!pending.length) { processImport(); return; }
-          var batch = pending.splice(0, 10);
-          var url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?id=' + batch.join(',');
-          fetch(url).then(function(r){ return r.json(); }).then(function(data) {
-            if (data.data) {
-              data.data.forEach(function(c) {
-                fetched[String(c.id)] = c;
-              });
-            }
-            fetchBatch();
-          }).catch(function() { fetchBatch(); });
+      if (!activeProfileId) {
+        toast('Error: No active profile');
+        input.value = '';
+        return;
+      }
+      
+      var totalImported = 0;
+      var totalFailed = 0;
+      
+      function processNextFile(index) {
+        if (index >= files.length) {
+          // All files processed
+          toast('Import complete: ' + totalImported + ' deck(s) saved' + (totalFailed > 0 ? ', ' + totalFailed + ' failed' : ''));
+          input.value = '';
+          switchTab('decks');
+          return;
         }
-        function processImport() {
-          var addPromises = [];
-          var deckResult = { main: [], extra: [], side: [] };
-          var addedCount = 0;
-          var skippedCount = 0;
+        
+        var file = files[index];
+        var reader = new FileReader();
+        
+        reader.onload = function(e) {
+          var lines = e.target.result.replace(/\r/g, '').split('\n');
+          var zone = 'main';
+          var parsed = { main: {}, extra: {}, side: {} };
+          
+          lines.forEach(function(line) {
+            line = line.trim();
+            if (!line || line[0] === '!' || line.slice(0,2) === '//') return;
+            if (line === '#main')  { zone = 'main';  return; }
+            if (line === '#extra') { zone = 'extra'; return; }
+            if (line === '#side')  { zone = 'side';  return; }
+            if (line[0] === '#') return;
+            if (/^[0-9]+$/.test(line)) {
+              parsed[zone][line] = (parsed[zone][line] || 0) + 1;
+            }
+          });
+          
+          var allIds = [];
           ['main','extra','side'].forEach(function(z) {
-            Object.keys(parsed[z]).forEach(function(cardId) {
-              var c = fetched[cardId];
-              if (!c) { skippedCount++; return; }
-              var qty = Math.min(parsed[z][cardId], 3);
-              // Check if card already in collection
-              var existing = cards.find(function(col) { return String(col.cardImageId) === cardId; });
-              if (existing) {
-                deckResult[z].push({ fid: existing.fid, name: existing.name, type: existing.type, qty: qty });
-              } else {
-                // Add to collection
-                var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
-                var newCard = {
-                  name: c.name, type: c.type, race: c.race||'—',
-                  level: c.level||c.linkval||null,
-                  cardImageId: c.card_images && c.card_images.length ? c.card_images[0].id : null,
-                  attribute: c.attribute||'—', archetype: c.archetype||'—',
-                  atk: c.atk !== undefined ? (c.atk === -1 ? '?' : String(c.atk)) : '—',
-                  def: c.def !== undefined ? (c.def === -1 ? '?' : String(c.def)) : '—',
-                  setName: fs.set_name||'—', setCode: fs.set_code||'—',
-                  cardNumber: fs.set_code||'—', rarity: fs.set_rarity||'Common',
-                  condition: 'Near Mint', edition: '1st Edition',
-                  qty: qty, price: 0, notes: '', addedAt: Date.now()
-                };
-                addPromises.push(
-                  col.add(newCard).then(function(ref) {
-                    addedCount++;
-                    deckResult[z].push({ fid: ref.id, name: c.name, type: c.type, qty: qty });
-                  })
-                );
+            Object.keys(parsed[z]).forEach(function(id) { if (allIds.indexOf(id) === -1) allIds.push(id); });
+          });
+          
+          if (!allIds.length) {
+            toast('No cards in ' + file.name + ' - skipping');
+            totalFailed++;
+            processNextFile(index + 1);
+            return;
+          }
+          
+          if (files.length > 1) {
+            toast('Processing ' + file.name + ' (' + (index + 1) + '/' + files.length + ')...');
+          }
+          
+          // Fetch card data
+          var fetched = {};
+          var pending = allIds.slice();
+          
+          function fetchBatch() {
+            if (!pending.length) { saveImportedDeck(); return; }
+            var batch = pending.splice(0, 10);
+            var url = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?id=' + batch.join(',');
+            fetch(url).then(function(r){ return r.json(); }).then(function(data) {
+              if (data.data) {
+                data.data.forEach(function(c) {
+                  fetched[String(c.id)] = c;
+                });
               }
-            });
-          });
-          Promise.all(addPromises).then(function() {
-            // Prepare deck data for saving
-            var deckData = {
-              main: deckResult.main,
-              extra: deckResult.extra,
-              side: deckResult.side,
-              mainCount: deckResult.main.reduce(function(s, c) { return s + c.qty; }, 0),
-              extraCount: deckResult.extra.reduce(function(s, c) { return s + c.qty; }, 0),
-              sideCount: deckResult.side.reduce(function(s, c) { return s + c.qty; }, 0)
-            };
+              fetchBatch();
+            }).catch(function() { fetchBatch(); });
+          }
+          
+          function saveImportedDeck() {
+            var addPromises = [];
+            var deckResult = { main: [], extra: [], side: [] };
+            var addedCount = 0;
             
-            // Get deck name from file
-            var defaultName = file.name.replace(/\.ydk$/i, '').replace(/_/g, ' ');
-            var deckName = prompt('Enter a name for this deck:', defaultName);
-            
-            if (!deckName || !deckName.trim()) {
-              toast('Import cancelled - no deck name provided');
-              input.value = '';
-              return;
-            }
-            
-            deckData.name = deckName.trim();
-            deckData.savedAt = Date.now();
-            
-            // Save directly to Firestore
-            if (!activeProfileId) {
-              toast('Error: No active profile');
-              input.value = '';
-              return;
-            }
-            
-            db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData)
-              .then(function() {
-                var msg = 'Deck "' + deckData.name + '" saved';
-                if (addedCount) msg += ' — ' + addedCount + ' new card(s) added to collection';
-                if (skippedCount) msg += ' — ' + skippedCount + ' card(s) not found';
-                toast(msg);
-                input.value = '';
-                // Switch to Saved Decks tab to show the new deck
-                switchTab('decks');
-              })
-              .catch(function(err) {
-                toast('Error saving deck: ' + err.message);
-                input.value = '';
+            ['main','extra','side'].forEach(function(z) {
+              Object.keys(parsed[z]).forEach(function(cardId) {
+                var c = fetched[cardId];
+                if (!c) return;
+                var qty = Math.min(parsed[z][cardId], 3);
+                var existing = cards.find(function(col) { return String(col.cardImageId) === cardId; });
+                
+                if (existing) {
+                  deckResult[z].push({ fid: existing.fid, name: existing.name, type: existing.type, qty: qty });
+                } else {
+                  var fs = (c.card_sets && c.card_sets.length) ? c.card_sets[0] : {};
+                  var newCard = {
+                    name: c.name, type: c.type, race: c.race||'—',
+                    level: c.level||c.linkval||null,
+                    cardImageId: c.card_images && c.card_images.length ? c.card_images[0].id : null,
+                    attribute: c.attribute||'—', archetype: c.archetype||'—',
+                    atk: c.atk !== undefined ? (c.atk === -1 ? '?' : String(c.atk)) : '—',
+                    def: c.def !== undefined ? (c.def === -1 ? '?' : String(c.def)) : '—',
+                    setName: fs.set_name||'—', setCode: fs.set_code||'—',
+                    cardNumber: fs.set_code||'—', rarity: fs.set_rarity||'Common',
+                    condition: 'Near Mint', edition: '1st Edition',
+                    qty: qty, price: 0, notes: '', addedAt: Date.now()
+                  };
+                  addPromises.push(
+                    col.add(newCard).then(function(ref) {
+                      addedCount++;
+                      deckResult[z].push({ fid: ref.id, name: c.name, type: c.type, qty: qty });
+                    })
+                  );
+                }
               });
-          });
-        }
-        fetchBatch();
-      };
-      reader.readAsText(file);
+            });
+            
+            Promise.all(addPromises).then(function() {
+              var deckData = {
+                main: deckResult.main,
+                extra: deckResult.extra,
+                side: deckResult.side,
+                mainCount: deckResult.main.reduce(function(s, c) { return s + c.qty; }, 0),
+                extraCount: deckResult.extra.reduce(function(s, c) { return s + c.qty; }, 0),
+                sideCount: deckResult.side.reduce(function(s, c) { return s + c.qty; }, 0),
+                name: file.name.replace(/\.ydk$/i, '').replace(/_/g, ' '),
+                savedAt: Date.now()
+              };
+              
+              db.collection('profiles').doc(activeProfileId).collection('decks').add(deckData)
+                .then(function() {
+                  totalImported++;
+                  processNextFile(index + 1);
+                })
+                .catch(function(err) {
+                  toast('Failed to save ' + file.name);
+                  totalFailed++;
+                  processNextFile(index + 1);
+                });
+            });
+          }
+          
+          fetchBatch();
+        };
+        
+        reader.onerror = function() {
+          toast('Error reading ' + file.name);
+          totalFailed++;
+          processNextFile(index + 1);
+        };
+        
+        reader.readAsText(file);
+      }
+      
+      processNextFile(0);
     });
+  };
+              return;
+            }
   };
 
   // Duplicate feature replaced with inline +/- controls
@@ -2902,11 +2926,8 @@ window.onload = function() {
     // Check if Chart.js is loaded
     if (typeof Chart === 'undefined') {
       console.error('Chart.js not loaded');
-      alert('Chart.js library failed to load. Please check your internet connection and refresh the page.');
       return;
     }
-    
-    console.log('Rendering statistics for ' + cards.length + ' cards...');
     
     // Summary statistics
     var uniqueCards = cards.length;
@@ -2918,29 +2939,19 @@ window.onload = function() {
     document.getElementById('stat-total-decks').textContent = savedDecks.length;
     document.getElementById('stat-avg-qty').textContent = avgQty;
     
-    // Render all charts with error handling
-    try {
-      renderTypeChart();
-      renderRarityChart();
-      renderConditionChart();
-      renderArchetypeChart();
-      renderGrowthChart();
-      renderTopCardsTable();
-      renderDeckStatsTable();
-      console.log('Statistics rendered successfully');
-    } catch (err) {
-      console.error('Error rendering statistics:', err);
-      alert('Error rendering statistics: ' + err.message);
-    }
+    // Render all charts
+    renderTypeChart();
+    renderRarityChart();
+    renderConditionChart();
+    renderArchetypeChart();
+    renderGrowthChart();
+    renderTopCardsTable();
+    renderDeckStatsTable();
   }
   
   function renderTypeChart() {
-    console.log('Rendering type chart...');
     var canvas = document.getElementById('typeChart');
-    if (!canvas) {
-      console.error('typeChart canvas not found');
-      return;
-    }
+    if (!canvas) return;
     
     var types = { 'Monsters': 0, 'Spells': 0, 'Traps': 0 };
     cards.forEach(function(c) {
@@ -2975,15 +2986,11 @@ window.onload = function() {
         }
       }
     });
-    console.log('Type chart rendered');
   }
   
   function renderRarityChart() {
     var canvas = document.getElementById('rarityChart');
-    if (!canvas) {
-      console.error('rarityChart canvas not found');
-      return;
-    }
+    if (!canvas) return;
     
     var rarities = {};
     cards.forEach(function(c) {
@@ -3031,10 +3038,7 @@ window.onload = function() {
   
   function renderConditionChart() {
     var canvas = document.getElementById('conditionChart');
-    if (!canvas) {
-      console.error('conditionChart canvas not found');
-      return;
-    }
+    if (!canvas) return;
     
     var conditions = {};
     cards.forEach(function(c) {
@@ -3071,10 +3075,7 @@ window.onload = function() {
   
   function renderArchetypeChart() {
     var canvas = document.getElementById('archetypeChart');
-    if (!canvas) {
-      console.error('archetypeChart canvas not found');
-      return;
-    }
+    if (!canvas) return;
     
     var archetypes = {};
     cards.forEach(function(c) {
@@ -3124,10 +3125,7 @@ window.onload = function() {
   
   function renderGrowthChart() {
     var canvas = document.getElementById('growthChart');
-    if (!canvas) {
-      console.error('growthChart canvas not found');
-      return;
-    }
+    if (!canvas) return;
     
     var dateGroups = {};
     cards.forEach(function(c) {
@@ -3538,19 +3536,14 @@ window.onload = function() {
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
-    console.log('switchTab called with:', tab);
     ['collection','stats','decks','wishlist','suggestions'].forEach(function(t) {
       var pane = document.getElementById('pane-' + t);
       var button = document.getElementById('tab-' + t);
-      console.log('Tab:', t, 'Pane exists:', !!pane, 'Button exists:', !!button);
       if (pane) pane.classList.toggle('active', t === tab);
       if (button) button.classList.toggle('active', t === tab);
     });
     if (tab === 'stats') {
-      console.log('Stats tab activated, will render in 100ms');
-      // Delay to ensure canvas elements are visible
       setTimeout(function() {
-        console.log('Calling renderStats now');
         renderStats();
       }, 100);
     }
