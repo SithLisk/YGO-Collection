@@ -66,7 +66,6 @@
    --silver #4a4035 on #f8f4ec = 9.2:1 ✓
 ─────────────────────────────────────────────────────────────── */
 [data-theme="ivory"] {
-  --void: #f8f4ec;
   --deep: #ede5d0;
   --mid: #d9ccb0;
   --bright: #b89a50;
@@ -101,6 +100,7 @@
 [data-theme="ivory"] .deck-zone { background: rgba(255,255,255,0.25); }
 [data-theme="ivory"] .deck-zone-hdr { background: rgba(255,255,255,0.3); }
 [data-theme="ivory"] .deck-search-row { background: rgba(255,255,255,0.3); }
+[data-theme="ivory"] #profileScreen > div:first-child { background: rgba(248,244,236,0.96); }
 [data-theme="ivory"] #deckSearchResults { background: rgba(252,248,240,0.98); border-color: var(--border); }
 [data-theme="ivory"] #collDropdown { background: rgba(252,248,240,0.98); border-color: var(--border); }
 
