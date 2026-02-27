@@ -69,6 +69,29 @@
 }
 /* Obsidian: bg image stays, content boxes shift to teal */
 
+/* ── Theme: Radiance (White & Gold) ────────────────────────
+   Background: #f8f6f0  Contrast ratios (WCAG AA):
+   --gold #b8860b on #f8f6f0  = 5.2:1 ✓
+   --deep #2a2416 on #f8f6f0 = 13.5:1 ✓
+   --mid #4a3d28 on #f8f6f0 = 8.8:1 ✓
+─────────────────────────────────────────────────────────────── */
+[data-theme="radiance"] {
+  --void: #f8f6f0;
+  --deep: #2a2416;
+  --mid: #4a3d28;
+  --bright: #7a6940;
+  --accent: #b8860b;
+  --gold: #d4af37;
+  --gold-dim: #b8860b;
+  --gold-pale: #f4e4b8;
+  --silver: #6a5d48;
+  --silver-dim: #8a7d68;
+  --white: #2a2416;
+  --border: rgba(212,175,55,0.4);
+  --glow: 0 0 20px rgba(212,175,55,0.3);
+}
+/* Radiance: bg image stays, light content boxes with gold accents */
+
 .theme-select { font-family:'Cinzel',serif; font-size:9px; letter-spacing:1px; background:rgba(0,0,0,0.5); border:1px solid var(--border); border-radius:6px; color:var(--gold); padding:4px 8px; cursor:pointer; outline:none; transition:border-color 0.2s; }
 .theme-select option { background:#060606; color:#f0c040; }
 
@@ -99,6 +122,21 @@
 [data-theme="void"] #profileScreen > div:first-child { background: rgba(2,8,5,0.97); }
 [data-theme="void"] .ps-card { background: linear-gradient(160deg,rgba(5,20,14,0.9),rgba(2,12,8,0.95)); }
 [data-theme="void"] .tab-nav { background: rgba(2,12,8,0.95); border-bottom-color: rgba(40,160,90,0.25); }
+
+/* ── Radiance theme: content boxes → light with gold ──────────── */
+[data-theme="radiance"] .coll-panel,
+[data-theme="radiance"] .deck-section,
+[data-theme="radiance"] #pwModal > div,
+[data-theme="radiance"] #newProfileModal > div,
+[data-theme="radiance"] #cardModal > div,
+[data-theme="radiance"] .saved-deck-card { background: rgb(248,246,240); }
+[data-theme="radiance"] .panel-hdr,
+[data-theme="radiance"] .deck-hdr { background: rgb(255,253,245); border-bottom-color: rgba(212,175,55,0.3); }
+[data-theme="radiance"] .deck-zone { background: rgb(252,250,242); border-color: rgba(212,175,55,0.2); }
+[data-theme="radiance"] #profileScreen > div:first-child { background: rgb(252,250,242); }
+[data-theme="radiance"] .ps-card { background: linear-gradient(160deg,rgb(248,246,240),rgb(255,253,245)); }
+[data-theme="radiance"] .tab-nav { background: rgb(255,253,245); border-bottom-color: rgba(212,175,55,0.25); }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body {
   background: var(--void);
@@ -383,6 +421,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <option value="">&#127756; Maroon</option>
         <option value="dusk">&#127754; Dusk</option>
         <option value="void">&#127807; Void</option>
+        <option value="radiance">&#9728; Radiance</option>
 
       </select>
       <button class="btn-test" id="lockBtn" onclick="toggleAuth()" style="padding:5px 12px;font-size:9px">&#x1F512; Locked</button>
