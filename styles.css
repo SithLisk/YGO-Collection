@@ -89,12 +89,12 @@
 [data-theme="ivory"] .deck-zone { background: rgba(255,255,255,0.3); }
 [data-theme="ivory"] .saved-deck-card { background: rgba(255,255,255,0.5); }
 [data-theme="ivory"] .ps-card { background: linear-gradient(160deg,rgba(255,255,255,0.7),rgba(240,232,210,0.8)); }
-[data-theme="ivory"] #profileScreen > div:first-child { background: rgba(248,244,236,0.96); }
 [data-theme="ivory"] .coll-panel { background: rgba(255,255,255,0.55); backdrop-filter: blur(4px); }
 [data-theme="ivory"] .deck-section { background: rgba(255,255,255,0.55); backdrop-filter: blur(4px); }
 [data-theme="ivory"] .panel-hdr { background: rgba(255,255,255,0.4); }
 [data-theme="ivory"] .deck-hdr { background: rgba(255,255,255,0.4); }
 [data-theme="ivory"] .saved-deck-card { background: rgba(255,255,255,0.55); }
+[data-theme="ivory"] .bg-overlay { background: rgba(248,244,236,0.82) !important; }
 [data-theme="ivory"] .ps-card { background: linear-gradient(160deg,rgba(255,255,255,0.7),rgba(240,232,210,0.85)); }
 [data-theme="ivory"] .field select, [data-theme="ivory"] .field input { background: rgba(255,255,255,0.7); color: #1a1008; }
 [data-theme="ivory"] .exp-bar, [data-theme="ivory"] .rarity-breakdown { background: rgba(255,255,255,0.3); }
