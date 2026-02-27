@@ -1073,7 +1073,7 @@ window.onload = function() {
 
   // Auth state
   var PW_HASH = '663dc2bedc7eb3349bc80bff0c508111936a2a0d18269353a7ef7020ae24cc18';
-  var authed = false;
+  var authed = sessionStorage.getItem('authed_' + (localStorage.getItem('activeProfileId') || 'default')) === 'true';
   var sortCol = null;
   var sortDir = 1;
   var collFilter = '';
@@ -1092,6 +1092,7 @@ window.onload = function() {
   window._toggleAuth = window.toggleAuth = function() {
     if (authed) {
       authed = false;
+      sessionStorage.setItem('authed_' + (activeProfileId || 'default'), 'false');
       updateLockBtn();
       toast('Locked');
     } else {
@@ -1111,6 +1112,7 @@ window.onload = function() {
     sha256(val).then(function(hash) {
       if (hash === PW_HASH) {
         authed = true;
+        sessionStorage.setItem('authed_' + (activeProfileId || 'default'), 'true');
         closePwModal();
         updateLockBtn();
         toast('Unlocked — you can now edit your collection');
@@ -2721,10 +2723,23 @@ window.onload = function() {
   // ══ Profile Management ══════════════════════════════════════
 
   function selectProfile(profileId, profileName) {
+    // If switching from one profile to another, clear auth
+    var wasSwitching = activeProfileId && activeProfileId !== profileId;
+    
     activeProfileId = profileId;
     activeProfileName = profileName;
     localStorage.setItem('activeProfileId', profileId);
     localStorage.setItem('activeProfileName', profileName);
+    
+    // Load auth state for this profile (or require password if switching)
+    if (wasSwitching) {
+      authed = false;
+      sessionStorage.setItem('authed_' + profileId, 'false');
+    } else {
+      authed = sessionStorage.getItem('authed_' + profileId) === 'true';
+    }
+    updateLockBtn();
+    
     // label updated above
     // Hide profile screen, show app
     var ps = document.getElementById('profileScreen');
@@ -2734,8 +2749,6 @@ window.onload = function() {
     if (hpn) hpn.textContent = profileName + "'s Yu-Gi-Oh!";
     document.title = profileName + "'s Yu-Gi-Oh! Collection Tracker";
     // Start scoped listeners
-    authed = false;
-    updateLockBtn();
     startProfileListener(profileId);
     loadSavedDecks();
     // Reset deck builder
