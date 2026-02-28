@@ -1138,8 +1138,10 @@ window.onload = function() {
     var spaced     = norm.replace(/-/g, ' ');
     var firstWord  = norm.split(/[ -]/)[0];
     
-    // Check if input looks like a card number/set code
+    // Check if input looks like a card number/set code (e.g., LOB-001)
     var isCardNumber = /^[A-Z0-9]{2,5}-[A-Z0-9]{2,5}$/i.test(q.trim());
+    var setCodeMatch = q.trim().match(/^([A-Z]{2,5})-/i);
+    var setCode = setCodeMatch ? setCodeMatch[1].toUpperCase() : null;
     
     // Check if input might be a set/structure deck name
     var mightBeSetName = norm.length > 10 && (
@@ -1166,9 +1168,6 @@ window.onload = function() {
       openAc(data.data.slice(0, 10));
     }
 
-    // Try each variant in sequence, stopping at the first success
-    // Also try archetype search — handles "Blue-Eyes", "Dark Magician" etc.
-    // which are archetypes with hundreds of variants that break fname
     var archetypeGuess = norm.replace(/-/g, ' ');
 
     function tryFetch(url) {
@@ -1222,12 +1221,28 @@ window.onload = function() {
         });
     }
 
-    // If input looks like a card number, try that first
-    if (isCardNumber) {
-      tryFetch(base + '?num=' + encodeURIComponent(q.trim().toUpperCase()))
+    // If input looks like a card number, extract set code and search by set
+    if (isCardNumber && setCode) {
+      // Search by set code (e.g., LOB from LOB-001)
+      tryFetch(base + '?cardset=' + encodeURIComponent(setCode) + '&num=50')
         .then(function(d) {
-          if (hasResults(d)) { handleData(d); return; }
-          // Card number didn't work, try normal search
+          if (hasResults(d)) {
+            // Filter results to find the specific card number
+            var exactCard = d.data.filter(function(card) {
+              return card.card_sets && card.card_sets.some(function(set) {
+                return set.set_code.toUpperCase() === q.trim().toUpperCase();
+              });
+            });
+            
+            if (exactCard.length > 0) {
+              handleData({data: exactCard});
+            } else {
+              // Show all cards from the set if exact match not found
+              handleData(d);
+            }
+            return;
+          }
+          // Set search didn't work, try normal search
           tryVariant(0);
         });
     } else {
