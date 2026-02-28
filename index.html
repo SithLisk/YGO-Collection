@@ -472,7 +472,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 .deck-detail-card-qty { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,0.85); color: var(--gold-pale); font-family: 'Cinzel', serif; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border); }
 .deck-detail-card-name { font-size: 11px; color: var(--silver); text-align: center; margin-top: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.coll-filter-opt { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; color: var(--silver); transition: background 0.15s, color 0.15s; border-bottom: 1px solid rgba(180,40,40,0.12); }
+.coll-filter-opt { font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 16px; cursor: pointer; color: var(--silver); transition: background 0.15s, color 0.15s; border-bottom: 1px solid rgba(180,40,40,0.12); display: flex; justify-content: space-between; align-items: center; gap: 16px; }
 .coll-filter-opt:last-child { border-bottom: none; }
 .coll-filter-opt:hover { background: rgba(160,30,30,0.25); color: var(--gold-pale); }
 .coll-filter-opt.active { color: var(--gold); background: rgba(160,30,30,0.15); }
@@ -693,11 +693,23 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
             <span id="collFilterLabel" style="font-size:9px;color:var(--accent);letter-spacing:1px"></span>
             <span style="font-size:10px;color:var(--silver-dim)">&#9660;</span>
           </button>
-          <div id="collDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a0505;border:1px solid var(--border);border-radius:10px;min-width:160px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden">
-            <div class="coll-filter-opt" onclick="setCollTypeFilter('')">All Cards</div>
-            <div class="coll-filter-opt" onclick="setCollTypeFilter('monster')">&#x25CF; Monsters</div>
-            <div class="coll-filter-opt" onclick="setCollTypeFilter('spell')">&#x25CF; Spells</div>
-            <div class="coll-filter-opt" onclick="setCollTypeFilter('trap')">&#x25CF; Traps</div>
+          <div id="collDropdown" style="display:none;position:absolute;top:calc(100% + 8px);left:0;background:#1a0505;border:1px solid var(--border);border-radius:10px;min-width:200px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,0.5);overflow:hidden">
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('')">
+              <span>All Cards</span>
+              <span id="count-all" style="color:var(--gold);font-family:Cinzel,serif;font-weight:600;margin-left:auto"></span>
+            </div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('monster')">
+              <span>&#x25CF; Monsters</span>
+              <span id="count-monsters" style="color:var(--gold);font-family:Cinzel,serif;font-weight:600;margin-left:auto"></span>
+            </div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('spell')">
+              <span>&#x25CF; Spells</span>
+              <span id="count-spells" style="color:var(--gold);font-family:Cinzel,serif;font-weight:600;margin-left:auto"></span>
+            </div>
+            <div class="coll-filter-opt" onclick="setCollTypeFilter('trap')">
+              <span>&#x25CF; Traps</span>
+              <span id="count-traps" style="color:var(--gold);font-family:Cinzel,serif;font-weight:600;margin-left:auto"></span>
+            </div>
           </div>
         </div>
         <label class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,160,0.3);color:var(--silver);cursor:pointer" title="Import from CSV">
@@ -1884,6 +1896,36 @@ window.onload = function() {
       ? visible.length + ' / ' + cards.length
       : cards.length;
     document.getElementById('statTotal').textContent = visible.reduce(function(s,e){return s+(e.qty||0);},0);
+    
+    // Update collection dropdown type counts
+    var monsterCount = 0;
+    var spellCount = 0;
+    var trapCount = 0;
+    var totalCount = 0;
+    
+    cards.forEach(function(e) {
+      var qty = e.qty || 0;
+      totalCount += qty;
+      var t = (e.type || '').toLowerCase();
+      if (t.indexOf('spell') !== -1) {
+        spellCount += qty;
+      } else if (t.indexOf('trap') !== -1) {
+        trapCount += qty;
+      } else {
+        monsterCount += qty;
+      }
+    });
+    
+    var countAll = document.getElementById('count-all');
+    var countMonsters = document.getElementById('count-monsters');
+    var countSpells = document.getElementById('count-spells');
+    var countTraps = document.getElementById('count-traps');
+    
+    if (countAll) countAll.textContent = totalCount;
+    if (countMonsters) countMonsters.textContent = monsterCount;
+    if (countSpells) countSpells.textContent = spellCount;
+    if (countTraps) countTraps.textContent = trapCount;
+    
     // Rarity breakdown
     var rarOrder = ['Secret Rare','Prismatic Secret Rare','Starlight Rare','Quarter Century Secret Rare','Ghost Rare','Ultra Rare','Super Rare','Rare','Common'];
     var rarColors = {'Secret Rare':'#e879f9','Prismatic Secret Rare':'#f0abfc','Starlight Rare':'#fde68a','Quarter Century Secret Rare':'#fcd34d','Ghost Rare':'#e2e8f0','Ultra Rare':'#fcd34d','Super Rare':'#c4b5fd','Rare':'#93c5fd','Common':'#6b5f7a'};
