@@ -3877,6 +3877,29 @@ window.onload = function() {
     }
     updateLockBtn();
     
+    // Load theme for this profile from Firestore
+    db.collection('profiles').doc(profileId).get().then(function(doc) {
+      if (doc.exists) {
+        var profileData = doc.data();
+        var savedTheme = profileData.theme || '';
+        if (savedTheme) {
+          document.documentElement.setAttribute('data-theme', savedTheme);
+          var sel = document.getElementById('themeSelect');
+          if (sel) sel.value = savedTheme;
+          localStorage.setItem('theme_' + profileId, savedTheme);
+        } else {
+          // Fallback to localStorage if no theme in Firestore
+          loadTheme();
+        }
+      } else {
+        // Profile doesn't exist in Firestore yet, use localStorage
+        loadTheme();
+      }
+    }).catch(function() {
+      // Error loading from Firestore, use localStorage
+      loadTheme();
+    });
+    
     // label updated above
     // Hide profile screen, show app
     var ps = document.getElementById('profileScreen');
@@ -4002,6 +4025,7 @@ window.onload = function() {
       db.collection('profiles').add({
         name: name,
         cardCount: 0,
+        theme: '', // Default theme (crimson)
         createdAt: Date.now()
       }).then(function(ref) {
         authed = true;
