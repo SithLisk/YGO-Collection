@@ -2368,6 +2368,7 @@ window.onload = function() {
 
   // ── Deck Detail Modal ────────────────────────────────────────
   window.openDeckDetailModal = function(deck) {
+    console.log('openDeckDetailModal called, deck:', deck.name, 'main cards:', deck.main.length, 'extra:', deck.extra.length);
     var modal = document.getElementById('deckDetailModal');
     document.getElementById('deckDetailName').textContent = deck.name || 'Unnamed Deck';
     document.getElementById('deckDetailMainCount').textContent = deck.mainCount || 0;
@@ -2606,9 +2607,10 @@ window.onload = function() {
       content.appendChild(missingSection);
     }
     
+    console.log('About to show modal, content children:', content.children.length);
     modal.style.display = 'flex';
     modal.scrollTop = 0;
-    modal.getBoundingClientRect();
+    console.log('Modal display is now:', modal.style.display);
   };
 
   window.closeDeckDetailModal = function() {
@@ -3610,6 +3612,7 @@ window.onload = function() {
   }
 
 window.viewSuggestedDeck = function(suggestion) {
+  console.log('viewSuggestedDeck called, suggestion:', suggestion.name, 'cards:', suggestion.cards ? suggestion.cards.length : 'NO CARDS');
   var deckData = {
     name: suggestion.name + ' (Your Collection)',
     main: [],
