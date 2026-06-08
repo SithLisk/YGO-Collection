@@ -2593,6 +2593,14 @@ window.onload = function() {
     }
     
     modal.style.display = 'flex';
+    setTimeout(function() {
+     modal.scrollTop = 0;
+     var content = document.getElementById('deckDetailContent');
+     if (content) content.style.display = 'none';
+     requestAnimationFrame(function() {
+      if (content) content.style.display = '';
+    });
+   }, 0);
   };
 
   window.closeDeckDetailModal = function() {
