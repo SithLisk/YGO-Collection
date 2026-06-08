@@ -4371,7 +4371,7 @@ html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;po
       + '<div id="lpBar' + i + '" style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.6s ease,background 0.6s ease"></div>'
       + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
-    [100,500,1000,2000].forEach(function(v) {
+    [50,100,500,1000,2000].forEach(function(v) {
       html += '<div style="display:flex;gap:4px">'
         + '<button onclick="lpAdjust(' + i + ',-' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(192,57,43,0.2);color:#f87171;border:1px solid rgba(192,57,43,0.35);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(192,57,43,0.4)\'" onmouseout="this.style.background=\'rgba(192,57,43,0.2)\'">-' + v + '</button>'
         + '<button onclick="lpAdjust(' + i + ',' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(74,222,128,0.3)\'" onmouseout="this.style.background=\'rgba(74,222,128,0.15)\'">' + '+' + v + '</button>'
