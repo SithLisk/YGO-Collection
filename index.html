@@ -2456,42 +2456,56 @@ window.onload = function() {
       function renderCardGrid(cards) {
         var cardsGrid = document.createElement('div');
         cardsGrid.className = 'deck-detail-cards';
-        
+      
         cards.forEach(function(card) {
           var cardDiv = document.createElement('div');
           cardDiv.className = 'deck-detail-card';
           cardDiv.onclick = function() { openCardModal(card.name); };
-          
+      
           var img = document.createElement('img');
           img.className = 'deck-detail-card-img';
           img.alt = card.name;
-          
-          // Fetch card image from API
-          fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
-            .then(function(r) { return r.ok ? r.json() : null; })
-            .then(function(data) {
-              if (data && data.data && data.data[0] && data.data[0].card_images && data.data[0].card_images[0]) {
-                img.src = data.data[0].card_images[0].image_url_small;
-              }
-            })
-            .catch(function() {
-              // Image load failed, leave placeholder
-            });
-          
+          img.style.minHeight = '120px';
+          img.style.background = 'rgba(0,0,0,0.3)';
+      
+          // Name label shown while image loads
+          var nameLabel = document.createElement('div');
+          nameLabel.className = 'deck-detail-card-name';
+          nameLabel.textContent = card.name;
+          nameLabel.style.fontSize = '10px';
+          nameLabel.style.padding = '4px';
+          nameLabel.style.whiteSpace = 'normal';
+          nameLabel.style.wordBreak = 'break-word';
+      
           cardDiv.appendChild(img);
-          
+          cardDiv.appendChild(nameLabel);
+      
           if (card.qty > 1) {
             var qtyBadge = document.createElement('div');
             qtyBadge.className = 'deck-detail-card-qty';
             qtyBadge.textContent = 'x' + card.qty;
             cardDiv.appendChild(qtyBadge);
           }
-          
+      
           cardsGrid.appendChild(cardDiv);
-        });
-        
-        return cardsGrid;
-      }
+
+    // Fetch image after card is already in DOM
+    requestAnimationFrame(function() {
+      fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
+        .then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (data && data.data && data.data[0] && data.data[0].card_images && data.data[0].card_images[0]) {
+            img.src = data.data[0].card_images[0].image_url_small;
+            img.style.minHeight = '';
+            img.style.background = '';
+          }
+        })
+        .catch(function() {});
+    });
+  });
+
+  return cardsGrid;
+}
       
       // Function to render a type section with optional subsections
       function renderTypeSection(sectionData, sectionTitle) {
