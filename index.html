@@ -4069,9 +4069,10 @@ window.onload = function() {
         card.appendChild(delBtn);
         card.onclick = function() { selectProfile(doc.id, p.name); };
         grid.appendChild(card);
-
-        lpInit();
       });
+
+      lpInit();
+      
       // Add "New Profile" card
       var newCard = document.createElement('div');
       newCard.className = 'ps-card ps-new';
