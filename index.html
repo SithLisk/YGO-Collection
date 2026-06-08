@@ -4270,7 +4270,7 @@ function lpAdjust(idx, delta) {
       + '</div>'
   });
   lpRenderLog();
-  lpRender();
+  lpUpdateCard(idx, p.lp, diff);
 }
 
 function lpUndoPlayer(idx) {
@@ -4288,7 +4288,7 @@ function lpUndoPlayer(idx) {
       + '</div>'
   });
   lpRenderLog();
-  lpRender();
+  lpUpdateCard(idx, p.lp, -last);
 }
 
 function lpUndoAll() {
@@ -4318,26 +4318,23 @@ function lpRender() {
     const pct = Math.max(0, Math.min(100, (p.lp / LP_START) * 100));
     const barColor = pct > 50 ? 'var(--accent)' : pct > 25 ? '#f97316' : '#ef4444';
     const isDead = p.lp <= 0;
-    html += '<div class="stat-card" style="padding:24px 20px;position:relative;overflow:hidden;'
+    html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s;'
       + (isDead ? 'border-color:rgba(239,68,68,0.6);box-shadow:0 0 20px rgba(239,68,68,0.3)' : '') + '">'
       + (isDead ? '<div style="position:absolute;inset:0;background:rgba(239,68,68,0.06);pointer-events:none;z-index:0"></div>' : '')
       + '<div style="position:relative;z-index:1">'
-      // Name input
       + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">'
       + '<input type="text" value="' + lpEsc(p.name) + '" onchange="lpRenamePlayer(' + i + ',this.value)"'
       + ' style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--gold-pale);font-family:\'Cinzel\',serif;font-size:13px;letter-spacing:2px;text-align:center;outline:none;width:160px;padding:2px 0;transition:border-color 0.2s"'
       + ' onfocus="this.style.borderBottomColor=\'var(--gold)\'" onblur="this.style.borderBottomColor=\'var(--border)\'">'
       + '</div>'
-      // LP number
-      + '<div style="font-family:\'Cinzel Decorative\',serif;font-size:clamp(28px,5vw,42px);color:' + (isDead ? '#ef4444' : 'var(--gold-pale)') + ';line-height:1;margin-bottom:4px">'
+      + '<div id="lpNum' + i + '" style="font-family:\'Cinzel Decorative\',serif;font-size:clamp(28px,5vw,42px);line-height:1;margin-bottom:4px;transition:color 0.4s;color:' + (isDead ? '#ef4444' : 'var(--gold-pale)') + '">'
       + (isDead ? '&#9760;' : p.lp.toLocaleString())
       + '</div>'
+      + '<div id="lpDelta' + i + '" style="font-family:\'Cinzel\',serif;font-size:13px;font-weight:700;min-height:20px;margin-bottom:4px;transition:opacity 0.15s;opacity:0"></div>'
       + '<div style="font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:3px;color:var(--silver-dim);text-transform:uppercase;margin-bottom:16px">Life Points</div>'
-      // LP bar
       + '<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:20px">'
-      + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s ease,background 0.4s ease"></div>'
+      + '<div id="lpBar' + i + '" style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.6s ease,background 0.6s ease"></div>'
       + '</div>'
-      // Quick buttons
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
     [100,500,1000,2000].forEach(function(v) {
       html += '<div style="display:flex;gap:4px">'
@@ -4346,7 +4343,6 @@ function lpRender() {
         + '</div>';
     });
     html += '</div>'
-      // Custom input row
       + '<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">'
       + '<input type="number" id="lpCustom' + i + '" placeholder="Custom..." min="1" max="99999"'
       + ' style="flex:1;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:\'Crimson Pro\',serif;font-size:14px;padding:7px 10px;outline:none"'
@@ -4354,11 +4350,73 @@ function lpRender() {
       + '<button onclick="var el=document.getElementById(\'lpCustom' + i + '\');var v=parseInt(el.value);if(v>0){lpAdjust(' + i + ',-v);el.value=\'\'}" style="font-family:\'Cinzel\',serif;font-size:9px;padding:7px 10px;background:rgba(192,57,43,0.25);color:#f87171;border:1px solid rgba(192,57,43,0.4);border-radius:6px;cursor:pointer;white-space:nowrap">- Deal</button>'
       + '<button onclick="var el=document.getElementById(\'lpCustom' + i + '\');var v=parseInt(el.value);if(v>0){lpAdjust(' + i + ',v);el.value=\'\'}" style="font-family:\'Cinzel\',serif;font-size:9px;padding:7px 10px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer;white-space:nowrap">+ Gain</button>'
       + '</div>'
-      // Per-player undo
       + '<button onclick="lpUndoPlayer(' + i + ')" style="width:100%;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:6px 0;background:rgba(255,255,255,0.04);color:var(--silver-dim);border:1px solid var(--border);border-radius:6px;cursor:pointer" onmouseover="this.style.color=\'var(--silver)\'" onmouseout="this.style.color=\'var(--silver-dim)\'">&#x21A9; Undo Last Change</button>'
       + '</div></div>';
   }
   grid.innerHTML = html;
+}
+
+function lpUpdateCard(idx, newLp, diff) {
+  const p = lpState.players[idx];
+  const pct = Math.max(0, Math.min(100, (newLp / LP_START) * 100));
+  const barColor = pct > 50 ? 'var(--accent)' : pct > 25 ? '#f97316' : '#ef4444';
+  const isDead = newLp <= 0;
+
+  const numEl  = document.getElementById('lpNum'   + idx);
+  const barEl  = document.getElementById('lpBar'   + idx);
+  const deltaEl= document.getElementById('lpDelta' + idx);
+  const cardEl = document.getElementById('lpCard'  + idx);
+
+  if (!numEl || !barEl || !deltaEl || !cardEl) { lpRender(); return; }
+
+  // — Animate the number counting up/down —
+  const startLp = newLp - diff;
+  const duration = Math.min(800, Math.max(300, Math.abs(diff) / 10));
+  const startTime = performance.now();
+
+  function animateCount(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(startLp + diff * eased);
+    numEl.style.color = isDead ? '#ef4444' : 'var(--gold-pale)';
+    numEl.innerHTML = isDead && progress === 1 ? '&#9760;' : Math.max(0, current).toLocaleString();
+    if (progress < 1) {
+      requestAnimationFrame(animateCount);
+    }
+  }
+  requestAnimationFrame(animateCount);
+
+  // — Flash the delta indicator —
+  const sign = diff > 0 ? '+' : '';
+  const color = diff > 0 ? '#4ade80' : '#f87171';
+  deltaEl.style.color = color;
+  deltaEl.style.opacity = '1';
+  deltaEl.style.transform = 'translateY(0)';
+  deltaEl.style.transition = 'opacity 0.15s, transform 0.15s';
+  deltaEl.textContent = sign + diff.toLocaleString();
+
+  // Fade delta out after 1.2s
+  if (deltaEl._fadeTimer) clearTimeout(deltaEl._fadeTimer);
+  deltaEl._fadeTimer = setTimeout(function() {
+    deltaEl.style.transition = 'opacity 0.6s, transform 0.6s';
+    deltaEl.style.opacity = '0';
+    deltaEl.style.transform = 'translateY(-6px)';
+  }, 1200);
+
+  // — Slide the LP bar —
+  barEl.style.width = pct + '%';
+  barEl.style.background = barColor;
+
+  // — Card border flash on death —
+  if (isDead) {
+    cardEl.style.borderColor = 'rgba(239,68,68,0.6)';
+    cardEl.style.boxShadow = '0 0 20px rgba(239,68,68,0.3)';
+  } else {
+    cardEl.style.borderColor = '';
+    cardEl.style.boxShadow = '';
+  }
 }
 
 function lpRenderLog() {
