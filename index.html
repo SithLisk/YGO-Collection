@@ -1000,6 +1000,21 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         </div>
       </div>
       <div style="padding:24px 28px">
+       <div id="lpPreDuel" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:24px">
+        <div style="font-family:'Cinzel Decorative',serif;font-size:clamp(18px,3vw,28px);color:var(--gold-pale);letter-spacing:3px;text-align:center">It's Time to Duel!</div>
+        <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:2px;color:var(--silver-dim);text-align:center">Select number of players, then begin</div>
+        <div style="display:flex;align-items:center;gap:12px">
+         <span style="font-family:'Cinzel',serif;font-size:10px;color:var(--silver-dim);letter-spacing:1px">Players:</span>
+         <select id="lpPrePlayerCount" style="font-family:'Cinzel',serif;font-size:10px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:6px 12px;cursor:pointer">
+          <option value="1">1</option>
+          <option value="2" selected>2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+        </select>
+      </div>
+      <button onclick="lpBeginDuel()" style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:4px;text-transform:uppercase;padding:16px 48px;background:linear-gradient(135deg,var(--bright),var(--accent));color:var(--white);border:none;border-radius:10px;cursor:pointer;box-shadow:var(--glow);transition:transform 0.2s,box-shadow 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='translateY(0)'">&#9876; Begin Duel</button>
+  </div>
+  <div id="lpDuelActive" style="display:none">
         <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:20px"></div>        
          <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
           <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px">&#128221; Change Log</div>
@@ -1010,7 +1025,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
       </div>
     </div>
   </div>
-  
 <div id="cardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)closeCardModal()">
   <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:720px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;overflow:hidden">
     <button onclick="closeCardModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--silver-dim);font-size:26px;cursor:pointer;z-index:1;line-height:1">&#x2715;</button>
@@ -4258,6 +4272,19 @@ function lpPlaySound(type) {
 }
 
 function lpInit() {
+  document.getElementById('lpPreDuel').style.display = 'flex';
+  document.getElementById('lpDuelActive').style.display = 'none';
+}
+
+function lpBeginDuel() {
+  var count = parseInt(document.getElementById('lpPrePlayerCount').value);
+  lpState.playerCount = count;
+  lpState.players.forEach(function(p) { p.lp = LP_START; p.history = []; });
+  lpState.globalLog = [];
+  document.getElementById('lpPlayerCount').value = count;
+  document.getElementById('lpPreDuel').style.display = 'none';
+  document.getElementById('lpDuelActive').style.display = 'block';
+  lpRenderLog();
   lpRender();
   lpPlaySound('start');
 }
@@ -4331,6 +4358,8 @@ function lpResetAll() {
   lpState.globalLog = [];
   lpRenderLog();
   lpRender();
+  document.getElementById('lpPreDuel').style.display = 'flex';
+  document.getElementById('lpDuelActive').style.display = 'none';
 }
 
 function lpEsc(str) {
