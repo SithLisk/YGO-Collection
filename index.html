@@ -999,7 +999,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         </div>
       </div>
       <div style="padding:24px 28px">
-        <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:20px"></div>
+        <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr));gap:20px;max-width:520px;margin:0 auto"></div>
         <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
           <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px">&#128221; Change Log</div>
           <div id="lpLog" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
@@ -4227,7 +4227,7 @@ window.onload = function() {
 const LP_START = 8000;
 
 let lpState = {
-  playerCount: 2,
+  playerCount: 1,
   players: [
     { name: 'Player 1', lp: LP_START, history: [] },
     { name: 'Player 2', lp: LP_START, history: [] },
