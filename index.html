@@ -3720,7 +3720,7 @@ window.onload = function() {
 
   // ── Tab switching ─────────────────────────────────────────
   window.switchTab = function(tab) {
-    ['collection','stats','decks','wishlist','suggestions'].forEach(function(t) {
+    ['collection','stats','decks','wishlist','suggestions','lifepoints'].forEach(function(t) {
       var pane = document.getElementById('pane-' + t);
       var button = document.getElementById('tab-' + t);
       if (pane) pane.classList.toggle('active', t === tab);
@@ -3735,8 +3735,9 @@ window.onload = function() {
     if (tab === 'wishlist') renderWishlist();
     if (tab === 'suggestions') {
       if (allSuggestions.length === 0) {
-        loadDeckSuggestions();
-      }
+        loadDeckSuggestions();}
+    if (tab === 'lifepoints') {
+      lpRender();}
     }
   };
 
