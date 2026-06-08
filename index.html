@@ -2605,16 +2605,8 @@ window.onload = function() {
       missingSection.appendChild(missingDesc);
       content.appendChild(missingSection);
     }
-    
     modal.style.display = 'flex';
-    setTimeout(function() {
-     modal.scrollTop = 0;
-     var content = document.getElementById('deckDetailContent');
-     if (content) content.style.display = 'none';
-     requestAnimationFrame(function() {
-      if (content) content.style.display = '';
-    });
-   }, 0);
+    modal.scrollTop = 0;
   };
 
   window.closeDeckDetailModal = function() {
@@ -3675,10 +3667,7 @@ window.viewSuggestedDeck = function(suggestion) {
       type: 'staples'
     });
   }
-
-  setTimeout(function() {
   openDeckDetailModal(deckData);
-  }, 50);
 };
 
   // ── Theme ──────────────────────────────────────────────────
@@ -3772,9 +3761,11 @@ window.viewSuggestedDeck = function(suggestion) {
     if (tab === 'wishlist') renderWishlist();
     if (tab === 'suggestions') {
       if (allSuggestions.length === 0) {
-        loadDeckSuggestions();}
+        loadDeckSuggestions();
+      }
+    }
     if (tab === 'lifepoints') {
-      lpRender();}
+      lpRender();
     }
   };
 
