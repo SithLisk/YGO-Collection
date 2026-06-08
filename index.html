@@ -680,6 +680,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     <button class="tab-btn" onclick="switchTab('decks')" id="tab-decks">&#x2261; Saved Decks</button>
     <button class="tab-btn" onclick="switchTab('wishlist')" id="tab-wishlist">&#9733; Wishlist</button>
     <button class="tab-btn" onclick="switchTab('suggestions')" id="tab-suggestions">&#x1F4A1; Deck Suggestions</button>
+    <button class="tab-btn" onclick="switchTab('lifepoints')" id="tab-lifepoints">&#9825; Life Points</button>
   </div>
 
   <!-- Collection Tab -->
@@ -997,6 +998,36 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
   </div>
 </div>
 
+<!-- Life Points Tab -->
+<div class="tab-pane" id="pane-lifepoints">
+  <div class="coll-panel">
+    <div class="panel-hdr">
+      <div class="panel-ttl">&#9825; Life Points Tracker</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="lpResetAll()">&#x21BB; Reset All</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--silver-dim);letter-spacing:1px">Players:</span>
+          <select id="lpPlayerCount" onchange="lpSetPlayerCount(this.value)" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:4px 8px;cursor:pointer">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+          </select>
+        </div>
+        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,40,0.3);color:#4ade80;border:1px solid rgba(74,222,128,0.3)" onclick="lpUndoAll()">&#x21A9; Undo Last</button>
+      </div>
+    </div>
+    <div style="padding:24px 28px">
+      <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:20px"></div>
+      <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+        <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px">&#128221; Change Log</div>
+        <div id="lpLog" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+          <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--silver-dim);text-align:center;padding:20px">No changes yet</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+  
 <!-- Deck Detail Modal -->
 <div id="deckDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px;overflow-y:auto" onclick="if(event.target===this)closeDeckDetailModal()">
   <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:1100px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;max-height:90vh;display:flex;flex-direction:column">
@@ -4038,6 +4069,8 @@ window.onload = function() {
         card.appendChild(delBtn);
         card.onclick = function() { selectProfile(doc.id, p.name); };
         grid.appendChild(card);
+
+        lpInit();
       });
       // Add "New Profile" card
       var newCard = document.createElement('div');
@@ -4183,6 +4216,158 @@ window.onload = function() {
   }
 
 }; // window.onload
+
+// ══════════════════════════════════════════════════════
+//  LIFE POINTS TRACKER
+// ══════════════════════════════════════════════════════
+
+const LP_START = 8000;
+
+let lpState = {
+  playerCount: 2,
+  players: [
+    { name: 'Player 1', lp: LP_START, history: [] },
+    { name: 'Player 2', lp: LP_START, history: [] },
+    { name: 'Player 3', lp: LP_START, history: [] },
+    { name: 'Player 4', lp: LP_START, history: [] },
+  ],
+  globalLog: []
+};
+
+function lpInit() {
+  lpRender();
+}
+
+function lpSetPlayerCount(n) {
+  lpState.playerCount = parseInt(n);
+  lpRender();
+}
+
+function lpRenamePlayer(idx, name) {
+  lpState.players[idx].name = name.trim() || ('Player ' + (idx + 1));
+}
+
+function lpAdjust(idx, delta) {
+  const p = lpState.players[idx];
+  if (p.lp <= 0 && delta < 0) return;
+  const prev = p.lp;
+  p.lp = Math.max(0, Math.min(99999, p.lp + delta));
+  const diff = p.lp - prev;
+  if (diff === 0) return;
+  p.history.push(diff);
+  const sign = diff > 0 ? '+' : '';
+  const color = diff > 0 ? '#4ade80' : '#f87171';
+  const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  lpState.globalLog.unshift({
+    html: '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:rgba(0,0,0,0.25);border:1px solid var(--border);border-radius:8px;font-size:12px">'
+      + '<span style="font-family:\'Cinzel\',serif;font-size:10px;color:var(--silver-dim);letter-spacing:1px">' + ts + '</span>'
+      + '<span style="color:var(--silver)">' + lpEsc(p.name) + '</span>'
+      + '<span style="font-family:\'Cinzel\',serif;font-weight:700;color:' + color + '">' + sign + diff.toLocaleString() + '</span>'
+      + '<span style="font-family:\'Cinzel Decorative\',serif;color:var(--gold-pale)">' + p.lp.toLocaleString() + ' LP</span>'
+      + '</div>'
+  });
+  lpRenderLog();
+  lpRender();
+}
+
+function lpUndoPlayer(idx) {
+  const p = lpState.players[idx];
+  if (!p.history.length) return;
+  const last = p.history.pop();
+  p.lp = Math.max(0, Math.min(99999, p.lp - last));
+  const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+  lpState.globalLog.unshift({
+    html: '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 12px;background:rgba(0,0,0,0.15);border:1px dashed var(--border);border-radius:8px;font-size:12px;opacity:0.75">'
+      + '<span style="font-family:\'Cinzel\',serif;font-size:10px;color:var(--silver-dim);letter-spacing:1px">' + ts + '</span>'
+      + '<span style="color:var(--silver)">' + lpEsc(p.name) + '</span>'
+      + '<span style="font-family:\'Cinzel\',serif;color:var(--silver-dim);font-size:10px">&#x21A9; UNDONE</span>'
+      + '<span style="font-family:\'Cinzel Decorative\',serif;color:var(--gold-pale)">' + p.lp.toLocaleString() + ' LP</span>'
+      + '</div>'
+  });
+  lpRenderLog();
+  lpRender();
+}
+
+function lpUndoAll() {
+  for (let i = 0; i < lpState.playerCount; i++) {
+    if (lpState.players[i].history.length) lpUndoPlayer(i);
+  }
+}
+
+function lpResetAll() {
+  if (!confirm('Reset all life points to 8000?')) return;
+  lpState.players.forEach(function(p) { p.lp = LP_START; p.history = []; });
+  lpState.globalLog = [];
+  lpRenderLog();
+  lpRender();
+}
+
+function lpEsc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function lpRender() {
+  const grid = document.getElementById('lpGrid');
+  if (!grid) return;
+  let html = '';
+  for (let i = 0; i < lpState.playerCount; i++) {
+    const p = lpState.players[i];
+    const pct = Math.max(0, Math.min(100, (p.lp / LP_START) * 100));
+    const barColor = pct > 50 ? 'var(--accent)' : pct > 25 ? '#f97316' : '#ef4444';
+    const isDead = p.lp <= 0;
+    html += '<div class="stat-card" style="padding:24px 20px;position:relative;overflow:hidden;'
+      + (isDead ? 'border-color:rgba(239,68,68,0.6);box-shadow:0 0 20px rgba(239,68,68,0.3)' : '') + '">'
+      + (isDead ? '<div style="position:absolute;inset:0;background:rgba(239,68,68,0.06);pointer-events:none;z-index:0"></div>' : '')
+      + '<div style="position:relative;z-index:1">'
+      // Name input
+      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">'
+      + '<input type="text" value="' + lpEsc(p.name) + '" onchange="lpRenamePlayer(' + i + ',this.value)"'
+      + ' style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--gold-pale);font-family:\'Cinzel\',serif;font-size:13px;letter-spacing:2px;text-align:center;outline:none;width:160px;padding:2px 0;transition:border-color 0.2s"'
+      + ' onfocus="this.style.borderBottomColor=\'var(--gold)\'" onblur="this.style.borderBottomColor=\'var(--border)\'">'
+      + '</div>'
+      // LP number
+      + '<div style="font-family:\'Cinzel Decorative\',serif;font-size:clamp(28px,5vw,42px);color:' + (isDead ? '#ef4444' : 'var(--gold-pale)') + ';line-height:1;margin-bottom:4px">'
+      + (isDead ? '&#9760;' : p.lp.toLocaleString())
+      + '</div>'
+      + '<div style="font-family:\'Cinzel\',serif;font-size:8px;letter-spacing:3px;color:var(--silver-dim);text-transform:uppercase;margin-bottom:16px">Life Points</div>'
+      // LP bar
+      + '<div style="height:6px;background:rgba(255,255,255,0.08);border-radius:3px;overflow:hidden;margin-bottom:20px">'
+      + '<div style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.4s ease,background 0.4s ease"></div>'
+      + '</div>'
+      // Quick buttons
+      + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+    [100,500,1000,2000].forEach(function(v) {
+      html += '<div style="display:flex;gap:4px">'
+        + '<button onclick="lpAdjust(' + i + ',-' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(192,57,43,0.2);color:#f87171;border:1px solid rgba(192,57,43,0.35);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(192,57,43,0.4)\'" onmouseout="this.style.background=\'rgba(192,57,43,0.2)\'">-' + v + '</button>'
+        + '<button onclick="lpAdjust(' + i + ',' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(74,222,128,0.3)\'" onmouseout="this.style.background=\'rgba(74,222,128,0.15)\'">' + '+' + v + '</button>'
+        + '</div>';
+    });
+    html += '</div>'
+      // Custom input row
+      + '<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">'
+      + '<input type="number" id="lpCustom' + i + '" placeholder="Custom..." min="1" max="99999"'
+      + ' style="flex:1;background:rgba(0,0,0,0.35);border:1px solid var(--border);border-radius:8px;color:var(--white);font-family:\'Crimson Pro\',serif;font-size:14px;padding:7px 10px;outline:none"'
+      + ' onkeydown="if(event.key===\'Enter\'){var v=parseInt(this.value);if(v>0){lpAdjust(' + i + ',-v);this.value=\'\';}}">'
+      + '<button onclick="var el=document.getElementById(\'lpCustom' + i + '\');var v=parseInt(el.value);if(v>0){lpAdjust(' + i + ',-v);el.value=\'\'}" style="font-family:\'Cinzel\',serif;font-size:9px;padding:7px 10px;background:rgba(192,57,43,0.25);color:#f87171;border:1px solid rgba(192,57,43,0.4);border-radius:6px;cursor:pointer;white-space:nowrap">- Deal</button>'
+      + '<button onclick="var el=document.getElementById(\'lpCustom' + i + '\');var v=parseInt(el.value);if(v>0){lpAdjust(' + i + ',v);el.value=\'\'}" style="font-family:\'Cinzel\',serif;font-size:9px;padding:7px 10px;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer;white-space:nowrap">+ Gain</button>'
+      + '</div>'
+      // Per-player undo
+      + '<button onclick="lpUndoPlayer(' + i + ')" style="width:100%;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:6px 0;background:rgba(255,255,255,0.04);color:var(--silver-dim);border:1px solid var(--border);border-radius:6px;cursor:pointer" onmouseover="this.style.color=\'var(--silver)\'" onmouseout="this.style.color=\'var(--silver-dim)\'">&#x21A9; Undo Last Change</button>'
+      + '</div></div>';
+  }
+  grid.innerHTML = html;
+}
+
+function lpRenderLog() {
+  const el = document.getElementById('lpLog');
+  if (!el) return;
+  if (!lpState.globalLog.length) {
+    el.innerHTML = '<div style="font-family:\'Cinzel\',serif;font-size:10px;letter-spacing:1px;color:var(--silver-dim);text-align:center;padding:20px">No changes yet</div>';
+    return;
+  }
+  el.innerHTML = lpState.globalLog.slice(0, 50).map(function(e){ return e.html; }).join('');
+}
+  
 </script>
 </body>
 </html>
