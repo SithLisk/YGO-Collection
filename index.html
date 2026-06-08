@@ -4237,69 +4237,28 @@ let lpState = {
   globalLog: []
 };
 
-var lpAudioCtx = null;
-
-function lpGetAudioCtx() {
-  if (!lpAudioCtx) {
-    lpAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  return lpAudioCtx;
-}
+var lpSounds = {
+  start:  new Audio('https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/sounds/sfx_duel-start.ogg'),
+  change: new Audio('https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/sounds/sfx_life-change.ogg'),
+  zero:   new Audio('https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/sounds/sfx_life-zero.ogg')
+};
 
 function lpPlaySound(type) {
   try {
-    var ctx = lpGetAudioCtx();
-    var now = ctx.currentTime;
-
-    if (type === 'decrease') {
-      // Descending two-tone hit — mimics the YGO damage sound
-      [0, 0.12].forEach(function(offset, i) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(i === 0 ? 520 : 320, now + offset);
-        osc.frequency.exponentialRampToValueAtTime(i === 0 ? 300 : 180, now + offset + 0.18);
-        gain.gain.setValueAtTime(0.35, now + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
-        osc.start(now + offset);
-        osc.stop(now + offset + 0.25);
-      });
-    } else if (type === 'increase') {
-      // Ascending two-tone chime — mimics the YGO LP recovery sound
-      [0, 0.14].forEach(function(offset, i) {
-        var osc = ctx.createOscillator();
-        var gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(i === 0 ? 380 : 560, now + offset);
-        osc.frequency.exponentialRampToValueAtTime(i === 0 ? 520 : 740, now + offset + 0.18);
-        gain.gain.setValueAtTime(0.28, now + offset);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.22);
-        osc.start(now + offset);
-        osc.stop(now + offset + 0.25);
-      });
-    } else if (type === 'death') {
-      // Low descending rumble for hitting 0
-      var osc = ctx.createOscillator();
-      var gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(220, now);
-      osc.frequency.exponentialRampToValueAtTime(60, now + 0.6);
-      gain.gain.setValueAtTime(0.4, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.7);
-      osc.start(now);
-      osc.stop(now + 0.75);
-    }
+    var snd;
+    if (type === 'start')    snd = lpSounds.start;
+    if (type === 'decrease') snd = lpSounds.change;
+    if (type === 'increase') snd = lpSounds.change;
+    if (type === 'death')    snd = lpSounds.zero;
+    if (!snd) return;
+    snd.currentTime = 0;
+    snd.play();
   } catch(e) {}
 }
 
 function lpInit() {
   lpRender();
+  lpPlaySound('start');
 }
 
 function lpSetPlayerCount(n) {
