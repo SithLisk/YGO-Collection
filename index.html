@@ -4345,7 +4345,15 @@ function lpRender() {
     const pct = Math.max(0, Math.min(100, (p.lp / LP_START) * 100));
     const barColor = pct > 50 ? 'var(--accent)' : pct > 25 ? '#f97316' : '#ef4444';
     const isDead = p.lp <= 0;
-    html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s;'
+    var cardBg = (function() {
+  var t = document.documentElement.getAttribute('data-theme');
+  if (t === 'dusk')     return 'background:rgb(6,14,32);';
+  if (t === 'void')     return 'background:rgb(5,20,14);';
+  if (t === 'radiance') return 'background:rgb(248,246,240);';
+  if (t === 'dark')     return 'background:rgb(10,10,10);';
+  return 'background:rgb(26,5,5);'; // default carnation/red theme
+})();
+html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s;' + cardBg
       + (isDead ? 'border-color:rgba(239,68,68,0.6);box-shadow:0 0 20px rgba(239,68,68,0.3)' : '') + '">'
       + (isDead ? '<div style="position:absolute;inset:0;background:rgba(239,68,68,0.06);pointer-events:none;z-index:0"></div>' : '')
       + '<div style="position:relative;z-index:1">'
