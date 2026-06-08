@@ -996,37 +996,38 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
       </div>
     </div>
   </div>
-</div>
-
-<!-- Life Points Tab -->
-<div class="tab-pane" id="pane-lifepoints">
-  <div class="coll-panel">
-    <div class="panel-hdr">
-      <div class="panel-ttl">&#9825; Life Points Tracker</div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="lpResetAll()">&#x21BB; Reset All</button>
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--silver-dim);letter-spacing:1px">Players:</span>
-          <select id="lpPlayerCount" onchange="lpSetPlayerCount(this.value)" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:4px 8px;cursor:pointer">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-          </select>
+  
+    <!-- Life Points Tab -->
+  <div class="tab-pane" id="pane-lifepoints">
+    <div class="coll-panel">
+      <div class="panel-hdr">
+        <div class="panel-ttl">&#9825; Life Points Tracker</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(160,30,30,0.3);color:var(--silver)" onclick="lpResetAll()">&#x21BB; Reset All</button>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Cinzel',serif;font-size:9px;color:var(--silver-dim);letter-spacing:1px">Players:</span>
+            <select id="lpPlayerCount" onchange="lpSetPlayerCount(this.value)" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:4px 8px;cursor:pointer">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+          </div>
+          <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,40,0.3);color:#4ade80;border:1px solid rgba(74,222,128,0.3)" onclick="lpUndoAll()">&#x21A9; Undo Last</button>
         </div>
-        <button class="btn" style="padding:7px 14px;font-size:9px;background:rgba(40,80,40,0.3);color:#4ade80;border:1px solid rgba(74,222,128,0.3)" onclick="lpUndoAll()">&#x21A9; Undo Last</button>
       </div>
-    </div>
-    <div style="padding:24px 28px">
-      <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:20px"></div>
-      <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
-        <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px">&#128221; Change Log</div>
-        <div id="lpLog" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
-          <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--silver-dim);text-align:center;padding:20px">No changes yet</div>
+      <div style="padding:24px 28px">
+        <div id="lpGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(260px,100%),1fr));gap:20px"></div>
+        <div style="margin-top:28px;border-top:1px solid var(--border);padding-top:20px">
+          <div style="font-family:'Cinzel',serif;font-size:11px;letter-spacing:3px;color:var(--gold);text-transform:uppercase;margin-bottom:14px">&#128221; Change Log</div>
+          <div id="lpLog" style="max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:6px">
+            <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--silver-dim);text-align:center;padding:20px">No changes yet</div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
   
 <!-- Deck Detail Modal -->
 <div id="deckDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px;overflow-y:auto" onclick="if(event.target===this)closeDeckDetailModal()">
