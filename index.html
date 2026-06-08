@@ -2330,7 +2330,6 @@ window.onload = function() {
     document.getElementById('modalSet').innerHTML = setInfo;
 
     modal.style.display = 'flex';
-    modal.scrollTop = 0;
 
     // Fetch full card data from API to get image and description
     fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(cardName))
@@ -2606,6 +2605,7 @@ window.onload = function() {
       missingSection.appendChild(missingDesc);
       content.appendChild(missingSection);
     }
+    
     modal.style.display = 'flex';
     modal.scrollTop = 0;
   };
@@ -3668,7 +3668,11 @@ window.viewSuggestedDeck = function(suggestion) {
       type: 'staples'
     });
   }
+
   openDeckDetailModal(deckData);
+
+
+
 };
 
   // ── Theme ──────────────────────────────────────────────────
@@ -3768,6 +3772,12 @@ window.viewSuggestedDeck = function(suggestion) {
     if (tab === 'lifepoints') {
       lpRender();
     }
+
+
+
+
+
+
   };
 
   // ── Save deck to Firestore ─────────────────────────────────
