@@ -4371,7 +4371,7 @@ function lpUpdateCard(idx, newLp, diff) {
 
   // — Animate the number counting up/down —
   const startLp = newLp - diff;
-  const duration = Math.min(800, Math.max(300, Math.abs(diff) / 10));
+  const duration = Math.min(1800, Math.max(700, Math.abs(diff) / 4));
   const startTime = performance.now();
 
   function animateCount(now) {
