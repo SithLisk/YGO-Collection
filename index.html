@@ -3593,75 +3593,69 @@ window.onload = function() {
     });
   }
 
-  window.viewSuggestedDeck = function(suggestion) {
-    // Show the cards you own for this archetype, plus missing cards needed
-    var deckData = {
-      name: suggestion.name + ' (Your Collection)',
-      main: [],
-      extra: [],
-      side: [],
-      mainCount: 0,
-      extraCount: 0,
-      sideCount: 0,
-      missingCards: []
+window.viewSuggestedDeck = function(suggestion) {
+  var deckData = {
+    name: suggestion.name + ' (Your Collection)',
+    main: [],
+    extra: [],
+    side: [],
+    mainCount: 0,
+    extraCount: 0,
+    sideCount: 0,
+    missingCards: []
+  };
+
+  suggestion.cards.forEach(function(card) {
+    var type = (card.type || '').toLowerCase();
+    var isExtra = type.includes('fusion') || type.includes('synchro') || type.includes('xyz') || type.includes('link');
+
+    var cardData = {
+      name: card.name,
+      qty: card.qty || 1,
+      type: card.type && card.type !== '—' ? card.type : (isExtra ? 'Fusion Monster' : 'Effect Monster'),
+      fid: card.fid
     };
-    
-    suggestion.cards.forEach(function(card) {
-      var cardData = {
-        name: card.name,
-        qty: card.qty || 1,
-        type: card.type || '—',
-        fid: card.fid
-      };
-      
-      // Determine zone based on card type
-      var type = (card.type || '').toLowerCase();
-      var isExtra = type.includes('fusion') || type.includes('synchro') || type.includes('xyz') || type.includes('link');
-      
-      if (isExtra) {
-        deckData.extra.push(cardData);
-        deckData.extraCount += cardData.qty;
-      } else {
-        deckData.main.push(cardData);
-        deckData.mainCount += cardData.qty;
-      }
-    });
-    
-    // Calculate missing cards to reach typical deck size
-    var currentTotal = deckData.mainCount + deckData.extraCount;
-    var targetMain = 40; // Minimum competitive deck
-    var targetExtra = 15; // Full extra deck
-    
-    if (currentTotal < targetMain) {
-      var missingMain = targetMain - deckData.mainCount;
-      var missingExtra = Math.max(0, targetExtra - deckData.extraCount);
-      
-      deckData.missingCards = [
-        {
-          description: 'Additional ' + suggestion.archetype + ' Main Deck cards',
-          count: missingMain,
-          type: 'main'
-        }
-      ];
-      
-      if (missingExtra > 0) {
-        deckData.missingCards.push({
-          description: 'Additional ' + suggestion.archetype + ' Extra Deck cards',
-          count: missingExtra,
-          type: 'extra'
-        });
-      }
-      
-      // Add staples suggestion
+
+    if (isExtra) {
+      deckData.extra.push(cardData);
+      deckData.extraCount += cardData.qty;
+    } else {
+      deckData.main.push(cardData);
+      deckData.mainCount += cardData.qty;
+    }
+  });
+
+  var currentTotal = deckData.mainCount + deckData.extraCount;
+  var targetMain = 40;
+  var targetExtra = 15;
+
+  if (currentTotal < targetMain) {
+    var missingMain = targetMain - deckData.mainCount;
+    var missingExtra = Math.max(0, targetExtra - deckData.extraCount);
+
+    deckData.missingCards = [{
+      description: 'Additional ' + suggestion.archetype + ' Main Deck cards',
+      count: missingMain,
+      type: 'main'
+    }];
+
+    if (missingExtra > 0) {
       deckData.missingCards.push({
-        description: 'Generic staple cards (hand traps, removal, etc.)',
-        count: Math.max(5, Math.floor((targetMain - currentTotal) * 0.3)),
-        type: 'staples'
+        description: 'Additional ' + suggestion.archetype + ' Extra Deck cards',
+        count: missingExtra,
+        type: 'extra'
       });
     }
-    
-    openDeckDetailModal(deckData);
-  };
+
+    deckData.missingCards.push({
+      description: 'Generic staple cards (hand traps, removal, etc.)',
+      count: Math.max(5, Math.floor((targetMain - currentTotal) * 0.3)),
+      type: 'staples'
+    });
+  }
+
+  openDeckDetailModal(deckData);
+};
 
   // ── Theme ──────────────────────────────────────────────────
   window.applyTheme = function(theme) {
