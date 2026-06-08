@@ -632,6 +632,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
         <div class="ac-list" id="acList"></div>
       </div>
       <span class="status-msg" id="statusMsg"></span>
+      <button id="clearSearchBtn" onclick="clearCardPreview()" class="btn" style="padding:10px 18px;font-size:10px;background:rgba(0,0,0,0.3);color:var(--silver-dim);border:1px solid var(--border);display:none">&#x2715; Clear</button>
     </div>
 
     <div class="card-preview" id="cardPreview">
@@ -1307,6 +1308,7 @@ window.onload = function() {
     document.getElementById('cardPreview').classList.add('open');
     document.getElementById('entryForm').classList.add('open');
     document.getElementById('previewName').textContent = card.name;
+    document.getElementById('clearSearchBtn').style.display = '';
 
     var tl = tLabel(card.type);
     var pc = tl.c === 'bs' ? 'ps' : tl.c === 'bt' ? 'pt' : 'pm';
@@ -4494,6 +4496,18 @@ function lpRenderLog() {
     return;
   }
   el.innerHTML = lpState.globalLog.slice(0, 50).map(function(e){ return e.html; }).join('');
+}
+
+function clearCardPreview() {
+  var preview = document.querySelector('.card-preview');
+  if (preview) preview.classList.remove('open');
+  var entryForm = document.querySelector('.entry-form');
+  if (entryForm) entryForm.classList.remove('open');
+  var searchInput = document.querySelector('.search-wrap input[type="text"]');
+  if (searchInput) searchInput.value = '';
+  var acList = document.querySelector('.ac-list');
+  if (acList) acList.classList.remove('open');
+  document.getElementById('clearSearchBtn').style.display = 'none';
 }
   
 </script>
