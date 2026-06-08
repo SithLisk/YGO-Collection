@@ -3741,6 +3741,8 @@ window.onload = function() {
       if (pane) pane.classList.toggle('active', t === tab);
       if (button) button.classList.toggle('active', t === tab);
     });
+    var deckBuilder = document.getElementById('deckBuilderSection') || document.querySelector('.deck-section');
+    if (deckBuilder) deckBuilder.style.display = tab === 'collection' ? '' : 'none';
     if (tab === 'stats') {
       setTimeout(function() {
         renderStats();
