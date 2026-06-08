@@ -2330,6 +2330,7 @@ window.onload = function() {
     document.getElementById('modalSet').innerHTML = setInfo;
 
     modal.style.display = 'flex';
+    modal.scrollTop = 0;
 
     // Fetch full card data from API to get image and description
     fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(cardName))
