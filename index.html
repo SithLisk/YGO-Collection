@@ -980,23 +980,6 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
     </div>
   </div>
 
-<div id="cardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)closeCardModal()">
-  <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:720px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;overflow:hidden">
-    <button onclick="closeCardModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--silver-dim);font-size:26px;cursor:pointer;z-index:1;line-height:1">&#x2715;</button>
-    <div style="display:grid;grid-template-columns:240px 1fr;gap:0">
-      <div style="background:#0e0303">
-        <img id="modalImg" src="" alt="" style="width:100%;display:block" onerror="this.style.display=&quot;none&quot;">
-      </div>
-      <div style="padding:28px 28px 28px 22px;display:flex;flex-direction:column;gap:14px">
-        <div id="modalName" style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold-pale);line-height:1.3"></div>
-        <div id="modalMeta" style="display:flex;flex-wrap:wrap;gap:8px"></div>
-        <div id="modalAtkDef" style="font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:1px"></div>
-        <div id="modalSet" style="font-size:15px;color:var(--silver-dim)"></div>
-        <div id="modalEffect" style="font-size:15px;color:var(--silver);line-height:1.8;font-style:italic;border-left:2px solid rgba(192,57,43,0.4);padding-left:14px;max-height:260px;overflow-y:auto"></div>
-      </div>
-    </div>
-  </div>
-  
     <!-- Life Points Tab -->
   <div class="tab-pane" id="pane-lifepoints">
     <div class="coll-panel">
@@ -1023,6 +1006,23 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
             <div style="font-family:'Cinzel',serif;font-size:10px;letter-spacing:1px;color:var(--silver-dim);text-align:center;padding:20px">No changes yet</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+  
+<div id="cardModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px" onclick="if(event.target===this)closeCardModal()">
+  <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:720px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;overflow:hidden">
+    <button onclick="closeCardModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--silver-dim);font-size:26px;cursor:pointer;z-index:1;line-height:1">&#x2715;</button>
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:0">
+      <div style="background:#0e0303">
+        <img id="modalImg" src="" alt="" style="width:100%;display:block" onerror="this.style.display=&quot;none&quot;">
+      </div>
+      <div style="padding:28px 28px 28px 22px;display:flex;flex-direction:column;gap:14px">
+        <div id="modalName" style="font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold-pale);line-height:1.3"></div>
+        <div id="modalMeta" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+        <div id="modalAtkDef" style="font-family:'Cinzel',serif;font-size:16px;color:var(--silver);letter-spacing:1px"></div>
+        <div id="modalSet" style="font-size:15px;color:var(--silver-dim)"></div>
+        <div id="modalEffect" style="font-size:15px;color:var(--silver);line-height:1.8;font-style:italic;border-left:2px solid rgba(192,57,43,0.4);padding-left:14px;max-height:260px;overflow-y:auto"></div>
       </div>
     </div>
   </div>
