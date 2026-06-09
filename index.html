@@ -4102,10 +4102,10 @@ const LP_START = 8000;
 let lpState = {
   playerCount: 1,
   players: [
-    { name: 'Player 1', lp: LP_START, history: [] },
-    { name: 'Player 2', lp: LP_START, history: [] },
-    { name: 'Player 3', lp: LP_START, history: [] },
-    { name: 'Player 4', lp: LP_START, history: [] },
+    { name: 'Player 1', lp: LP_START, history: [], icon: null },
+    { name: 'Player 2', lp: LP_START, history: [], icon: null },
+    { name: 'Player 3', lp: LP_START, history: [], icon: null },
+    { name: 'Player 4', lp: LP_START, history: [], icon: null },
   ],
   globalLog: []
 };
@@ -4224,6 +4224,45 @@ function lpEsc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+var LP_ICONS = [
+  { name: 'Yami Yugi',    url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855409_Yamiyugiddm.webp' },
+  { name: 'Seto Kaiba',   url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855408_Seto_Kaiba.webp' },
+  { name: 'Joey Wheeler', url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855407_Joey_wheeler.webp' },
+  { name: 'Duke Devlin',  url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855406_DukeDevlin.webp' },
+  { name: 'Rex Raptor',   url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855408_Rex_Raptor.webp' },
+  { name: 'Yami Bakura',  url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855409_Yami_Bakura.webp' },
+  { name: 'Solomon Muto', url: 'https://raw.githubusercontent.com/SithLisk/YGO-Collection/main/icons/1781034855409_Solomon_Muto.webp' },
+];
+
+function lpSelectIcon(playerIdx, iconIdx) {
+  lpState.players[playerIdx].icon = iconIdx === -1 ? null : LP_ICONS[iconIdx].url;
+  // Update just the icon area without full re-render
+  var iconEl = document.getElementById('lpIcon' + playerIdx);
+  var pickerEl = document.getElementById('lpIconPicker' + playerIdx);
+  if (iconEl) {
+    if (lpState.players[playerIdx].icon) {
+      iconEl.innerHTML = '<img src="' + lpState.players[playerIdx].icon + '" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(240,192,64,0.4)">';
+    } else {
+      iconEl.innerHTML = '<div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px">&#9876;</div>';
+    }
+  }
+  if (pickerEl) {
+    // Update selected state on thumbs
+    pickerEl.querySelectorAll('.lp-icon-thumb').forEach(function(el, i) {
+      var isSelected = (iconIdx === -1 && i === 0) || (i === iconIdx + 1);
+      el.style.border = isSelected ? '2px solid var(--gold)' : '2px solid transparent';
+      el.style.opacity = isSelected ? '1' : '0.6';
+    });
+  }
+}
+
+function lpToggleIconPicker(playerIdx) {
+  var picker = document.getElementById('lpIconPicker' + playerIdx);
+  if (!picker) return;
+  var isOpen = picker.style.display !== 'none';
+  picker.style.display = isOpen ? 'none' : 'flex';
+}
+
 function lpRender() {
   const grid = document.getElementById('lpGrid');
   if (!grid) return;
@@ -4234,22 +4273,50 @@ function lpRender() {
     const barColor = pct > 50 ? 'var(--accent)' : pct > 25 ? '#f97316' : '#ef4444';
     const isDead = p.lp <= 0;
     var cardBg = (function() {
-  var t = document.documentElement.getAttribute('data-theme');
-  if (t === 'dusk')     return 'background:rgb(6,14,32);';
-  if (t === 'void')     return 'background:rgb(5,20,14);';
-  if (t === 'radiance') return 'background:rgb(248,246,240);';
-  if (t === 'dark')     return 'background:rgb(10,10,10);';
-  return 'background:rgb(26,5,5);'; // default carnation/red theme
-})();
-html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s;' + cardBg
+      var t = document.documentElement.getAttribute('data-theme');
+      if (t === 'dusk')     return 'background:rgb(6,14,32);';
+      if (t === 'void')     return 'background:rgb(5,20,14);';
+      if (t === 'radiance') return 'background:rgb(248,246,240);';
+      if (t === 'dark')     return 'background:rgb(10,10,10);';
+      return 'background:rgb(26,5,5);';
+    })();
+
+    // Build icon display
+    var iconHtml = p.icon
+      ? '<img src="' + p.icon + '" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);box-shadow:0 0 12px rgba(240,192,64,0.4)">'
+      : '<div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.06);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:28px">&#9876;</div>';
+
+    // Build icon picker thumbs
+    var pickerThumbs = '<div class="lp-icon-thumb" onclick="lpSelectIcon(' + i + ',-1)" title="None"'
+      + ' style="flex-shrink:0;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,0.06);border:' + (!p.icon ? '2px solid var(--gold)' : '2px solid transparent') + ';display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;opacity:' + (!p.icon ? '1' : '0.6') + '">&#9876;</div>';
+    LP_ICONS.forEach(function(ic, idx) {
+      var isSelected = p.icon === ic.url;
+      pickerThumbs += '<img src="' + ic.url + '" class="lp-icon-thumb" title="' + ic.name + '" onclick="lpSelectIcon(' + i + ',' + idx + ')"'
+        + ' style="flex-shrink:0;width:44px;height:44px;border-radius:50%;object-fit:cover;border:' + (isSelected ? '2px solid var(--gold)' : '2px solid transparent') + ';cursor:pointer;opacity:' + (isSelected ? '1' : '0.6') + ';transition:border 0.15s,opacity 0.15s">';
+    });
+
+    html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;position:relative;overflow:hidden;transition:border-color 0.4s,box-shadow 0.4s;' + cardBg
       + (isDead ? 'border-color:rgba(239,68,68,0.6);box-shadow:0 0 20px rgba(239,68,68,0.3)' : '') + '">'
       + (isDead ? '<div style="position:absolute;inset:0;background:rgba(239,68,68,0.06);pointer-events:none;z-index:0"></div>' : '')
       + '<div style="position:relative;z-index:1">'
-      + '<div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px">'
+
+      // Icon portrait - clickable to toggle picker
+      + '<div style="display:flex;flex-direction:column;align-items:center;gap:8px;margin-bottom:16px">'
+      + '<div id="lpIcon' + i + '" onclick="lpToggleIconPicker(' + i + ')" style="cursor:pointer;transition:transform 0.15s" onmouseover="this.style.transform=\'scale(1.05)\'" onmouseout="this.style.transform=\'scale(1)\'">'
+      + iconHtml
+      + '</div>'
+
+      // Icon picker - scrollable row, hidden by default
+      + '<div id="lpIconPicker' + i + '" style="display:none;flex-direction:row;gap:8px;overflow-x:auto;padding:8px 4px;width:100%;scrollbar-width:thin;scrollbar-color:var(--gold-dim) transparent;-webkit-overflow-scrolling:touch;border:1px solid var(--border);border-radius:10px;background:rgba(0,0,0,0.25)">'
+      + pickerThumbs
+      + '</div>'
+
+      // Name input
       + '<input type="text" value="' + lpEsc(p.name) + '" onchange="lpRenamePlayer(' + i + ',this.value)"'
       + ' style="background:transparent;border:none;border-bottom:1px solid var(--border);color:var(--gold-pale);font-family:\'Cinzel\',serif;font-size:13px;letter-spacing:2px;text-align:center;outline:none;width:160px;padding:2px 0;transition:border-color 0.2s"'
       + ' onfocus="this.style.borderBottomColor=\'var(--gold)\'" onblur="this.style.borderBottomColor=\'var(--border)\'">'
       + '</div>'
+
       + '<div id="lpNum' + i + '" style="font-family:\'Cinzel Decorative\',serif;font-size:clamp(28px,5vw,42px);line-height:1;margin-bottom:4px;transition:color 0.4s;color:' + (isDead ? '#ef4444' : 'var(--gold-pale)') + '">'
       + (isDead ? '&#9760;' : p.lp.toLocaleString())
       + '</div>'
@@ -4259,12 +4326,14 @@ html += '<div class="stat-card" id="lpCard' + i + '" style="padding:24px 20px;po
       + '<div id="lpBar' + i + '" style="height:100%;width:' + pct + '%;background:' + barColor + ';border-radius:3px;transition:width 0.6s ease,background 0.6s ease"></div>'
       + '</div>'
       + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">';
+
     [50,100,500,1000,2000].forEach(function(v) {
       html += '<div style="display:flex;gap:4px">'
         + '<button onclick="lpAdjust(' + i + ',-' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(192,57,43,0.2);color:#f87171;border:1px solid rgba(192,57,43,0.35);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(192,57,43,0.4)\'" onmouseout="this.style.background=\'rgba(192,57,43,0.2)\'">-' + v + '</button>'
-        + '<button onclick="lpAdjust(' + i + ',' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(74,222,128,0.3)\'" onmouseout="this.style.background=\'rgba(74,222,128,0.15)\'">' + '+' + v + '</button>'
+        + '<button onclick="lpAdjust(' + i + ',' + v + ')" style="flex:1;font-family:\'Cinzel\',serif;font-size:9px;letter-spacing:1px;padding:7px 0;background:rgba(74,222,128,0.15);color:#4ade80;border:1px solid rgba(74,222,128,0.3);border-radius:6px;cursor:pointer" onmouseover="this.style.background=\'rgba(74,222,128,0.3)\'" onmouseout="this.style.background=\'rgba(74,222,128,0.15)\'">+' + v + '</button>'
         + '</div>';
     });
+
     html += '</div>'
       + '<div style="display:flex;gap:6px;align-items:center;margin-bottom:10px">'
       + '<input type="number" id="lpCustom' + i + '" placeholder="Custom..." min="1" max="99999"'
