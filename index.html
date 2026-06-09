@@ -956,28 +956,42 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 
   <!-- Deck Suggestions Tab -->
   <div class="tab-pane" id="pane-suggestions">
-    <div class="coll-panel">
-      <div class="panel-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
-        <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase">
-          &#x1F4A1; Deck Suggestions
-          <span id="suggestionsCount" style="font-size:10px;color:var(--silver-dim);margin-left:10px"></span>
+    <div id="suggestionsList">
+      <div class="coll-panel">
+        <div class="panel-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase">
+            &#x1F4A1; Deck Suggestions
+            <span id="suggestionsCount" style="font-size:10px;color:var(--silver-dim);margin-left:10px"></span>
+          </div>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+            <button id="refreshSuggestionsBtn" onclick="loadDeckSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;background:rgba(40,80,160,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">
+              &#x21bb; Refresh
+            </button>
+            <select id="matchFilter" onchange="filterSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:6px 10px;cursor:pointer">
+              <option value="0">All Suggestions</option>
+              <option value="25">25%+ Progress</option>
+              <option value="50">50%+ Progress</option>
+              <option value="75">75%+ Progress</option>
+            </select>
+          </div>
         </div>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <button id="refreshSuggestionsBtn" onclick="loadDeckSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;background:rgba(40,80,160,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">
-            &#x21bb; Refresh
-          </button>
-          <select id="matchFilter" onchange="filterSuggestions()" style="font-family:'Cinzel',serif;font-size:9px;background:rgba(0,0,0,0.5);border:1px solid var(--border);border-radius:6px;color:var(--gold);padding:6px 10px;cursor:pointer">
-            <option value="0">All Suggestions</option>
-            <option value="25">25%+ Progress</option>
-            <option value="50">50%+ Progress</option>
-            <option value="75">75%+ Progress</option>
-          </select>
+        <div id="suggestionsLoading" style="text-align:center;padding:60px 20px;font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--silver-dim);text-transform:uppercase;display:none">
+          Loading deck suggestions...
         </div>
+        <div class="suggestions-grid" id="suggestionsGrid"></div>
       </div>
-      <div id="suggestionsLoading" style="text-align:center;padding:60px 20px;font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;color:var(--silver-dim);text-transform:uppercase;display:none">
-        Loading deck suggestions...
+    </div>
+    <div id="suggestionDetail" style="display:none">
+      <div class="coll-panel">
+        <div class="panel-hdr" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:16px">
+            <button onclick="closeSuggestionDetail()" style="font-family:'Cinzel',serif;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:7px 14px;background:rgba(0,0,0,0.3);border:1px solid var(--border);border-radius:6px;color:var(--silver);cursor:pointer">&#x2190; Back</button>
+            <div id="suggestionDetailName" style="font-family:'Cinzel',serif;font-size:13px;letter-spacing:3px;color:var(--gold);text-transform:uppercase"></div>
+          </div>
+          <div id="suggestionDetailMeta" style="display:flex;gap:20px;font-family:'Cinzel',serif;font-size:10px;color:var(--silver)"></div>
+        </div>
+        <div id="suggestionDetailContent" style="padding:24px 28px"></div>
       </div>
-      <div class="suggestions-grid" id="suggestionsGrid"></div>
     </div>
   </div>
 
@@ -1045,25 +1059,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
 </div>
 
   
-<!-- Deck Detail Modal -->
-<div id="deckDetailModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;align-items:center;justify-content:center;padding:24px;overflow-y:auto" onclick="if(event.target===this)closeDeckDetailModal()">
-  <div style="background:#1a0505;border:1px solid var(--border);border-radius:20px;max-width:1100px;width:100%;box-shadow:0 0 60px rgba(160,30,30,0.5);position:relative;max-height:90vh;display:flex;flex-direction:column;overflow:hidden">
-    <button onclick="closeDeckDetailModal()" style="position:absolute;top:14px;right:18px;background:none;border:none;color:var(--silver-dim);font-size:26px;cursor:pointer;z-index:1;line-height:1">&#x2715;</button>
-    
-    <div style="padding:28px 32px 20px;border-bottom:1px solid var(--border)">
-      <div id="deckDetailName" style="font-family:'Cinzel',serif;font-size:24px;font-weight:700;color:var(--gold-pale);line-height:1.3;margin-bottom:12px"></div>
-      <div id="deckDetailMeta" style="display:flex;gap:24px;font-size:14px;color:var(--silver)">
-        <span>Main: <b id="deckDetailMainCount" style="color:var(--gold-pale)">0</b></span>
-        <span>Extra: <b id="deckDetailExtraCount" style="color:var(--gold-pale)">0</b></span>
-        <span>Side: <b id="deckDetailSideCount" style="color:var(--gold-pale)">0</b></span>
-      </div>
-    </div>
-    
-    <div id="deckDetailContent" style="padding:24px 32px;overflow-y:auto;flex:1;min-height:0">
-      <!-- Zones will be populated here -->
-    </div>
-  </div>
-</div>
+
 
 <div class="toast" id="toast"></div>
 
@@ -2368,258 +2364,13 @@ window.onload = function() {
 
   // ── Deck Detail Modal ────────────────────────────────────────
   window.openDeckDetailModal = function(deck) {
-    console.log('openDeckDetailModal called, deck:', deck.name, 'main cards:', deck.main.length, 'extra:', deck.extra.length);
-    var modal = document.getElementById('deckDetailModal');
-    document.getElementById('deckDetailName').textContent = deck.name || 'Unnamed Deck';
-    document.getElementById('deckDetailMainCount').textContent = deck.mainCount || 0;
-    document.getElementById('deckDetailExtraCount').textContent = deck.extraCount || 0;
-    document.getElementById('deckDetailSideCount').textContent = deck.sideCount || 0;
-    
-    var content = document.getElementById('deckDetailContent');
-    content.innerHTML = '';
-    
-    // Render each zone
-    ['main', 'extra', 'side'].forEach(function(zone) {
-      var zoneCards = deck[zone] || [];
-      if (!zoneCards.length) return;
-      
-      var zoneDiv = document.createElement('div');
-      zoneDiv.className = 'deck-detail-zone';
-      
-      // Separate cards by type and monster subtype
-      var monstersBySubtype = {
-        fusion: [],
-        synchro: [],
-        xyz: [],
-        link: [],
-        ritual: [],
-        effect: [],
-        normal: [],
-        other: []
-      };
-      var spells = [];
-      var traps = [];
-      
-      zoneCards.forEach(function(card) {
-        var type = (card.type || '').toLowerCase();
-        if (type.includes('monster')) {
-          // Categorize by monster subtype
-          if (type.includes('fusion')) {
-            monstersBySubtype.fusion.push(card);
-          } else if (type.includes('synchro')) {
-            monstersBySubtype.synchro.push(card);
-          } else if (type.includes('xyz')) {
-            monstersBySubtype.xyz.push(card);
-          } else if (type.includes('link')) {
-            monstersBySubtype.link.push(card);
-          } else if (type.includes('ritual')) {
-            monstersBySubtype.ritual.push(card);
-          } else if (type.includes('effect')) {
-            monstersBySubtype.effect.push(card);
-          } else if (type.includes('normal')) {
-            monstersBySubtype.normal.push(card);
-          } else {
-            monstersBySubtype.other.push(card);
-          }
-        } else if (type.includes('spell')) {
-          spells.push(card);
-        } else if (type.includes('trap')) {
-          traps.push(card);
-        }
-      });
-      
-      // Calculate total monster count
-      var monsterCount = 0;
-      Object.keys(monstersBySubtype).forEach(function(subtype) {
-        monsterCount += monstersBySubtype[subtype].reduce(function(sum, c) { return sum + c.qty; }, 0);
-      });
-      var spellCount = spells.reduce(function(sum, c) { return sum + c.qty; }, 0);
-      var trapCount = traps.reduce(function(sum, c) { return sum + c.qty; }, 0);
-      
-      var header = document.createElement('div');
-      header.className = 'deck-detail-zone-header';
-      var zoneName = zone === 'main' ? 'Main Deck' : zone === 'extra' ? 'Extra Deck' : 'Side Deck';
-      var totalCards = zoneCards.reduce(function(sum, c) { return sum + c.qty; }, 0);
-      header.innerHTML = zoneName + ' (' + totalCards + ')';
-      
-      // Add type breakdown
-      var breakdown = document.createElement('div');
-      breakdown.className = 'deck-detail-breakdown';
-      breakdown.innerHTML = 
-        '<span class="breakdown-item"><span class="breakdown-label">Monsters:</span> <b>' + monsterCount + '</b></span>' +
-        '<span class="breakdown-item"><span class="breakdown-label">Spells:</span> <b>' + spellCount + '</b></span>' +
-        '<span class="breakdown-item"><span class="breakdown-label">Traps:</span> <b>' + trapCount + '</b></span>';
-      
-      zoneDiv.appendChild(header);
-      zoneDiv.appendChild(breakdown);
-      
-      // Function to render a card grid
-      function renderCardGrid(cards) {
-        var cardsGrid = document.createElement('div');
-        cardsGrid.className = 'deck-detail-cards';
-      
-        cards.forEach(function(card) {
-          var cardDiv = document.createElement('div');
-          cardDiv.className = 'deck-detail-card';
-          cardDiv.onclick = function() { openCardModal(card.name); };
-      
-          var img = document.createElement('img');
-          img.className = 'deck-detail-card-img';
-          img.alt = card.name;
-          img.style.minHeight = '120px';
-          img.style.background = 'rgba(0,0,0,0.3)';
-      
-          // Name label shown while image loads
-          var nameLabel = document.createElement('div');
-          nameLabel.className = 'deck-detail-card-name';
-          nameLabel.textContent = card.name;
-          nameLabel.style.fontSize = '10px';
-          nameLabel.style.padding = '4px';
-          nameLabel.style.whiteSpace = 'normal';
-          nameLabel.style.wordBreak = 'break-word';
-      
-          cardDiv.appendChild(img);
-          cardDiv.appendChild(nameLabel);
-      
-          if (card.qty > 1) {
-            var qtyBadge = document.createElement('div');
-            qtyBadge.className = 'deck-detail-card-qty';
-            qtyBadge.textContent = 'x' + card.qty;
-            cardDiv.appendChild(qtyBadge);
-          }
-      
-          cardsGrid.appendChild(cardDiv);
-
-    // Fetch image after card is already in DOM
-    requestAnimationFrame(function() {
-      fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
-        .then(function(r) { return r.ok ? r.json() : null; })
-        .then(function(data) {
-          if (data && data.data && data.data[0] && data.data[0].card_images && data.data[0].card_images[0]) {
-            img.src = data.data[0].card_images[0].image_url_small;
-            img.style.minHeight = '';
-            img.style.background = '';
-          }
-        })
-        .catch(function() {});
-    });
-  });
-
-  return cardsGrid;
-}
-      
-      // Function to render a type section with optional subsections
-      function renderTypeSection(sectionData, sectionTitle) {
-        if (!sectionData) return;
-        
-        // Check if we have any cards
-        var hasCards = false;
-        if (Array.isArray(sectionData)) {
-          hasCards = sectionData.length > 0;
-        } else {
-          // It's an object with subsections
-          Object.keys(sectionData).forEach(function(key) {
-            if (sectionData[key].length > 0) hasCards = true;
-          });
-        }
-        
-        if (!hasCards) return;
-        
-        var typeHeader = document.createElement('div');
-        typeHeader.className = 'deck-detail-type-header';
-        typeHeader.textContent = sectionTitle;
-        zoneDiv.appendChild(typeHeader);
-        
-        if (Array.isArray(sectionData)) {
-          // Simple array of cards
-          zoneDiv.appendChild(renderCardGrid(sectionData));
-        } else {
-          // Object with subsections (for monsters)
-          var subtypeOrder = ['fusion', 'synchro', 'xyz', 'link', 'ritual', 'effect', 'normal', 'other'];
-          var subtypeLabels = {
-            fusion: 'Fusion',
-            synchro: 'Synchro',
-            xyz: 'Xyz',
-            link: 'Link',
-            ritual: 'Ritual',
-            effect: 'Effect',
-            normal: 'Normal',
-            other: 'Other'
-          };
-          
-          subtypeOrder.forEach(function(subtype) {
-            var cards = sectionData[subtype];
-            if (cards && cards.length > 0) {
-              var subtypeHeader = document.createElement('div');
-              subtypeHeader.className = 'deck-detail-subtype-header';
-              subtypeHeader.textContent = subtypeLabels[subtype];
-              zoneDiv.appendChild(subtypeHeader);
-              zoneDiv.appendChild(renderCardGrid(cards));
-            }
-          });
-        }
-      }
-      
-      // Render sections in order: Monsters (with subtypes), Spells, Traps
-      renderTypeSection(monstersBySubtype, 'Monsters');
-      renderTypeSection(spells, 'Spells');
-      renderTypeSection(traps, 'Traps');
-      
-      content.appendChild(zoneDiv);
-    });
-    
-    // Add "Missing Cards" section if provided
-    if (deck.missingCards && deck.missingCards.length > 0) {
-      var missingSection = document.createElement('div');
-      missingSection.className = 'deck-detail-zone';
-      missingSection.style.marginTop = '24px';
-      missingSection.style.borderColor = 'rgba(240,192,64,0.3)';
-      
-      var missingHeader = document.createElement('div');
-      missingHeader.className = 'deck-detail-zone-header';
-      missingHeader.style.color = 'var(--gold)';
-      missingHeader.innerHTML = '&#128161; Cards Needed for 100% Completion';
-      missingSection.appendChild(missingHeader);
-      
-      var missingDesc = document.createElement('div');
-      missingDesc.style.padding = '12px 16px';
-      missingDesc.style.fontSize = '13px';
-      missingDesc.style.color = 'var(--silver)';
-      missingDesc.style.lineHeight = '1.8';
-      
-      var missingHTML = '<div style="margin-bottom:12px;color:var(--gold-pale);font-family:Cinzel,serif;font-size:11px;letter-spacing:1px;text-transform:uppercase">Recommended additions:</div>';
-      
-      deck.missingCards.forEach(function(missing) {
-        var icon = missing.type === 'main' ? '🃏' : missing.type === 'extra' ? '⭐' : '💫';
-        missingHTML += '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--gold-dim)">';
-        missingHTML += '<span style="color:var(--silver)">' + icon + ' ' + missing.description + '</span>';
-        missingHTML += '<span style="color:var(--gold);font-family:Cinzel,serif;font-weight:600">~' + missing.count + ' cards</span>';
-        missingHTML += '</div>';
-      });
-      
-      var totalMissing = deck.missingCards.reduce(function(sum, m) { return sum + m.count; }, 0);
-      missingHTML += '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);text-align:center;color:var(--gold-pale);font-family:Cinzel,serif;font-size:12px;letter-spacing:1px">';
-      missingHTML += 'Total estimated: <b style="color:var(--gold);font-size:16px">' + totalMissing + ' cards</b> needed to reach competitive deck size (40-60 main, 0-15 extra)';
-      missingHTML += '</div>';
-      
-      missingDesc.innerHTML = missingHTML;
-      missingSection.appendChild(missingDesc);
-      content.appendChild(missingSection);
-    }
-    
-    console.log('About to show modal, content children:', content.children.length);
-
-    content.offsetHeight; // force layout flush before showing modal
-
-    modal.style.display = 'flex';
-    modal.scrollTop = 0;
-
-    console.log('Modal display is now:', modal.style.display);
+    viewSuggestedDeckInline(deck);
   };
 
   window.closeDeckDetailModal = function() {
-    document.getElementById('deckDetailModal').style.display = 'none';
+    closeSuggestionDetail();
   };
+
 
   // Qty adjust
   window.adjustQty = function(id, delta) {
@@ -3436,24 +3187,17 @@ window.onload = function() {
       toast('Please unlock to view suggestions');
       return;
     }
-    
     if (!cards || cards.length === 0) {
       document.getElementById('suggestionsGrid').innerHTML = '<div class="deck-empty">Add cards to your collection to see deck suggestions</div>';
       return;
     }
-    
     document.getElementById('suggestionsLoading').style.display = 'block';
     document.getElementById('suggestionsGrid').innerHTML = '';
-    
-    // Analyze collection for archetype suggestions
     allSuggestions = analyzeArchetypeSuggestions();
-    
-    // Sort by match percentage and card count
-    allSuggestions.sort(function(a, b) { 
+    allSuggestions.sort(function(a, b) {
       if (b.matchPercent !== a.matchPercent) return b.matchPercent - a.matchPercent;
       return b.ownedCount - a.ownedCount;
     });
-    
     filteredSuggestions = allSuggestions.slice();
     document.getElementById('suggestionsLoading').style.display = 'none';
     renderSuggestions();
@@ -3462,30 +3206,20 @@ window.onload = function() {
   function analyzeArchetypeSuggestions() {
     var suggestions = [];
     var archetypeCards = {};
-    
-    // Group owned cards by archetype
     cards.forEach(function(card) {
       var archetype = card.archetype;
       if (archetype && archetype !== '—') {
-        if (!archetypeCards[archetype]) {
-          archetypeCards[archetype] = [];
-        }
+        if (!archetypeCards[archetype]) archetypeCards[archetype] = [];
         archetypeCards[archetype].push(card);
       }
     });
-    
-    // Create suggestions for archetypes with enough cards
     Object.keys(archetypeCards).forEach(function(archetype) {
       var archetypeCardList = archetypeCards[archetype];
       var totalOwned = archetypeCardList.reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
       var uniqueCards = archetypeCardList.length;
-      
-      // Only suggest if we have at least 5 cards from the archetype
       if (totalOwned >= 5) {
-        // Estimate deck completion (typical deck has 15-25 archetype cards)
         var estimatedDeckSize = Math.max(40, totalOwned + 10);
         var matchPercent = Math.min(100, Math.round((totalOwned / estimatedDeckSize) * 100));
-        
         suggestions.push({
           name: archetype + ' Deck',
           archetype: archetype,
@@ -3494,74 +3228,50 @@ window.onload = function() {
           totalCards: estimatedDeckSize,
           matchPercent: matchPercent,
           cards: archetypeCardList,
-          missingCards: [] // We don't know specific missing cards
-        });
-      }
-    });
-    
-    // If no archetypes found, suggest based on popular ones in collection
-    if (suggestions.length === 0) {
-      var cardTypes = {};
-      cards.forEach(function(card) {
-        var type = card.type || '';
-        if (type.includes('Monster')) {
-          cardTypes['Monster'] = (cardTypes['Monster'] || 0) + (card.qty || 0);
-        } else if (type.includes('Spell')) {
-          cardTypes['Spell'] = (cardTypes['Spell'] || 0) + (card.qty || 0);
-        } else if (type.includes('Trap')) {
-          cardTypes['Trap'] = (cardTypes['Trap'] || 0) + (card.qty || 0);
-        }
-      });
-      
-      if (cardTypes['Monster'] > 0) {
-        suggestions.push({
-          name: 'Mixed Strategy Deck',
-          archetype: 'Generic',
-          ownedCount: cards.reduce(function(s, c) { return s + (c.qty || 0); }, 0),
-          uniqueCards: cards.length,
-          totalCards: 40,
-          matchPercent: Math.min(100, Math.round((cards.reduce(function(s, c) { return s + (c.qty || 0); }, 0) / 40) * 100)),
-          cards: cards,
           missingCards: []
         });
       }
+    });
+    if (suggestions.length === 0) {
+      var totalOwned = cards.reduce(function(s, c) { return s + (c.qty || 0); }, 0);
+      suggestions.push({
+        name: 'Mixed Strategy Deck',
+        archetype: 'Generic',
+        ownedCount: totalOwned,
+        uniqueCards: cards.length,
+        totalCards: 40,
+        matchPercent: Math.min(100, Math.round((totalOwned / 40) * 100)),
+        cards: cards,
+        missingCards: []
+      });
     }
-    
     return suggestions;
   }
 
   window.filterSuggestions = function() {
     var minMatch = parseInt(document.getElementById('matchFilter').value);
-    filteredSuggestions = allSuggestions.filter(function(d) {
-      return d.matchPercent >= minMatch;
-    });
+    filteredSuggestions = allSuggestions.filter(function(d) { return d.matchPercent >= minMatch; });
     renderSuggestions();
   };
 
   function renderSuggestions() {
     var grid = document.getElementById('suggestionsGrid');
-    
     if (!filteredSuggestions.length) {
       grid.innerHTML = '<div class="deck-empty">No deck suggestions found. Try adjusting filters or add more cards to your collection.</div>';
       document.getElementById('suggestionsCount').textContent = '0 decks';
       return;
     }
-    
     document.getElementById('suggestionsCount').textContent = filteredSuggestions.length + ' deck' + (filteredSuggestions.length !== 1 ? 's' : '');
-    
     grid.innerHTML = '';
     filteredSuggestions.forEach(function(suggestion) {
       var card = document.createElement('div');
       card.className = 'suggestion-card';
-      
       var header = document.createElement('div');
       header.className = 'suggestion-header';
-      
       var name = document.createElement('div');
       name.className = 'suggestion-name';
       name.textContent = suggestion.name;
       header.appendChild(name);
-      
       var matchDiv = document.createElement('div');
       matchDiv.style.textAlign = 'right';
       var matchPercent = document.createElement('div');
@@ -3573,115 +3283,224 @@ window.onload = function() {
       matchDiv.appendChild(matchPercent);
       matchDiv.appendChild(matchLabel);
       header.appendChild(matchDiv);
-      
       card.appendChild(header);
-      
       var info = document.createElement('div');
       info.className = 'suggestion-info';
       info.textContent = 'You own ' + suggestion.ownedCount + ' cards (' + suggestion.uniqueCards + ' unique)';
       card.appendChild(info);
-      
       var meta = document.createElement('div');
       meta.className = 'suggestion-meta';
-      
-      var cardsItem = document.createElement('div');
-      cardsItem.className = 'suggestion-meta-item';
-      cardsItem.innerHTML = '<div class="suggestion-meta-label">Total Cards</div><div class="suggestion-meta-value">' + suggestion.ownedCount + '</div>';
-      meta.appendChild(cardsItem);
-      
-      var uniqueItem = document.createElement('div');
-      uniqueItem.className = 'suggestion-meta-item';
-      uniqueItem.innerHTML = '<div class="suggestion-meta-label">Unique</div><div class="suggestion-meta-value">' + suggestion.uniqueCards + '</div>';
-      meta.appendChild(uniqueItem);
-      
-      var archetypeItem = document.createElement('div');
-      archetypeItem.className = 'suggestion-meta-item';
-      archetypeItem.innerHTML = '<div class="suggestion-meta-label">Archetype</div><div class="suggestion-meta-value">' + suggestion.archetype + '</div>';
-      meta.appendChild(archetypeItem);
-      
+      meta.innerHTML =
+        '<div class="suggestion-meta-item"><div class="suggestion-meta-label">Total Cards</div><div class="suggestion-meta-value">' + suggestion.ownedCount + '</div></div>' +
+        '<div class="suggestion-meta-item"><div class="suggestion-meta-label">Unique</div><div class="suggestion-meta-value">' + suggestion.uniqueCards + '</div></div>' +
+        '<div class="suggestion-meta-item"><div class="suggestion-meta-label">Archetype</div><div class="suggestion-meta-value">' + suggestion.archetype + '</div></div>';
       card.appendChild(meta);
-      
       var actions = document.createElement('div');
       actions.className = 'suggestion-actions';
-      
       var viewBtn = document.createElement('button');
       viewBtn.className = 'suggestion-btn view';
       viewBtn.textContent = 'View Your Cards';
-      viewBtn.onclick = function() { viewSuggestedDeck(suggestion); };
+      viewBtn.onclick = (function(s) { return function() { viewSuggestedDeckInline(buildDeckData(s)); }; })(suggestion);
       actions.appendChild(viewBtn);
-      
       card.appendChild(actions);
       grid.appendChild(card);
     });
   }
 
-window.viewSuggestedDeck = function(suggestion) {
-  console.log('viewSuggestedDeck called, suggestion:', suggestion.name, 'cards:', suggestion.cards ? suggestion.cards.length : 'NO CARDS');
-  var deckData = {
-    name: suggestion.name + ' (Your Collection)',
-    main: [],
-    extra: [],
-    side: [],
-    mainCount: 0,
-    extraCount: 0,
-    sideCount: 0,
-    missingCards: []
-  };
-
-  suggestion.cards.forEach(function(card) {
-    var type = (card.type || '').toLowerCase();
-    var isExtra = type.includes('fusion') || type.includes('synchro') || type.includes('xyz') || type.includes('link');
-
-    var cardData = {
-      name: card.name,
-      qty: card.qty || 1,
-      type: card.type && card.type !== '—' ? card.type : (isExtra ? 'Fusion Monster' : 'Effect Monster'),
-      fid: card.fid
+  function buildDeckData(suggestion) {
+    var deckData = {
+      name: suggestion.name + ' (Your Collection)',
+      main: [], extra: [], side: [],
+      mainCount: 0, extraCount: 0, sideCount: 0,
+      missingCards: []
     };
-
-    if (isExtra) {
-      deckData.extra.push(cardData);
-      deckData.extraCount += cardData.qty;
-    } else {
-      deckData.main.push(cardData);
-      deckData.mainCount += cardData.qty;
-    }
-  });
-
-  var currentTotal = deckData.mainCount + deckData.extraCount;
-  var targetMain = 40;
-  var targetExtra = 15;
-
-  if (currentTotal < targetMain) {
-    var missingMain = targetMain - deckData.mainCount;
-    var missingExtra = Math.max(0, targetExtra - deckData.extraCount);
-
-    deckData.missingCards = [{
-      description: 'Additional ' + suggestion.archetype + ' Main Deck cards',
-      count: missingMain,
-      type: 'main'
-    }];
-
-    if (missingExtra > 0) {
-      deckData.missingCards.push({
-        description: 'Additional ' + suggestion.archetype + ' Extra Deck cards',
-        count: missingExtra,
-        type: 'extra'
-      });
-    }
-
-    deckData.missingCards.push({
-      description: 'Generic staple cards (hand traps, removal, etc.)',
-      count: Math.max(5, Math.floor((targetMain - currentTotal) * 0.3)),
-      type: 'staples'
+    suggestion.cards.forEach(function(card) {
+      var type = (card.type || '').toLowerCase();
+      var isExtra = type.includes('fusion') || type.includes('synchro') || type.includes('xyz') || type.includes('link');
+      var cardData = {
+        name: card.name,
+        qty: card.qty || 1,
+        type: card.type && card.type !== '—' ? card.type : (isExtra ? 'Fusion Monster' : 'Effect Monster'),
+        fid: card.fid
+      };
+      if (isExtra) {
+        deckData.extra.push(cardData);
+        deckData.extraCount += cardData.qty;
+      } else {
+        deckData.main.push(cardData);
+        deckData.mainCount += cardData.qty;
+      }
     });
+    var currentTotal = deckData.mainCount + deckData.extraCount;
+    if (currentTotal < 40) {
+      var missingMain = 40 - deckData.mainCount;
+      var missingExtra = Math.max(0, 15 - deckData.extraCount);
+      deckData.missingCards = [
+        { description: 'Additional ' + suggestion.archetype + ' Main Deck cards', count: missingMain, type: 'main' }
+      ];
+      if (missingExtra > 0) deckData.missingCards.push({ description: 'Additional ' + suggestion.archetype + ' Extra Deck cards', count: missingExtra, type: 'extra' });
+      deckData.missingCards.push({ description: 'Generic staple cards (hand traps, removal, etc.)', count: Math.max(5, Math.floor((40 - currentTotal) * 0.3)), type: 'staples' });
+    }
+    return deckData;
   }
 
-  openDeckDetailModal(deckData);
+  function viewSuggestedDeckInline(deck) {
+    document.getElementById('suggestionsList').style.display = 'none';
+    document.getElementById('suggestionDetail').style.display = 'block';
+    document.getElementById('suggestionDetailName').textContent = deck.name;
+    document.getElementById('suggestionDetailMeta').innerHTML =
+      'Main: <b style="color:var(--gold-pale);margin-left:4px">' + (deck.mainCount || 0) + '</b>' +
+      '<span style="margin-left:16px">Extra: <b style="color:var(--gold-pale);margin-left:4px">' + (deck.extraCount || 0) + '</b></span>' +
+      '<span style="margin-left:16px">Side: <b style="color:var(--gold-pale);margin-left:4px">' + (deck.sideCount || 0) + '</b></span>';
 
+    var content = document.getElementById('suggestionDetailContent');
+    content.innerHTML = '';
 
+    ['main', 'extra', 'side'].forEach(function(zone) {
+      var zoneCards = deck[zone] || [];
+      if (!zoneCards.length) return;
 
+      var monstersBySubtype = { fusion:[], synchro:[], xyz:[], link:[], ritual:[], effect:[], normal:[], other:[] };
+      var spells = [], traps = [];
+
+      zoneCards.forEach(function(card) {
+        var type = (card.type || '').toLowerCase();
+        if (type.includes('monster')) {
+          if (type.includes('fusion')) monstersBySubtype.fusion.push(card);
+          else if (type.includes('synchro')) monstersBySubtype.synchro.push(card);
+          else if (type.includes('xyz')) monstersBySubtype.xyz.push(card);
+          else if (type.includes('link')) monstersBySubtype.link.push(card);
+          else if (type.includes('ritual')) monstersBySubtype.ritual.push(card);
+          else if (type.includes('effect')) monstersBySubtype.effect.push(card);
+          else if (type.includes('normal')) monstersBySubtype.normal.push(card);
+          else monstersBySubtype.other.push(card);
+        } else if (type.includes('spell')) {
+          spells.push(card);
+        } else if (type.includes('trap')) {
+          traps.push(card);
+        } else {
+          monstersBySubtype.other.push(card);
+        }
+      });
+
+      var monsterCount = Object.keys(monstersBySubtype).reduce(function(s, k) {
+        return s + monstersBySubtype[k].reduce(function(ss, c) { return ss + c.qty; }, 0);
+      }, 0);
+      var spellCount = spells.reduce(function(s, c) { return s + c.qty; }, 0);
+      var trapCount = traps.reduce(function(s, c) { return s + c.qty; }, 0);
+      var totalCards = zoneCards.reduce(function(s, c) { return s + c.qty; }, 0);
+
+      var zoneDiv = document.createElement('div');
+      zoneDiv.className = 'deck-detail-zone';
+
+      var header = document.createElement('div');
+      header.className = 'deck-detail-zone-header';
+      header.textContent = (zone === 'main' ? 'Main Deck' : zone === 'extra' ? 'Extra Deck' : 'Side Deck') + ' (' + totalCards + ')';
+      zoneDiv.appendChild(header);
+
+      var breakdown = document.createElement('div');
+      breakdown.className = 'deck-detail-breakdown';
+      breakdown.innerHTML =
+        '<span class="breakdown-item"><span class="breakdown-label">Monsters:</span> <b>' + monsterCount + '</b></span>' +
+        '<span class="breakdown-item"><span class="breakdown-label">Spells:</span> <b>' + spellCount + '</b></span>' +
+        '<span class="breakdown-item"><span class="breakdown-label">Traps:</span> <b>' + trapCount + '</b></span>';
+      zoneDiv.appendChild(breakdown);
+
+      function renderCardRow(cardList, sectionLabel, subtypeLabel) {
+        if (!cardList || !cardList.length) return;
+        if (sectionLabel) {
+          var sh = document.createElement('div');
+          sh.className = 'deck-detail-type-header';
+          sh.textContent = sectionLabel;
+          zoneDiv.appendChild(sh);
+        }
+        if (subtypeLabel) {
+          var sub = document.createElement('div');
+          sub.className = 'deck-detail-subtype-header';
+          sub.textContent = subtypeLabel;
+          zoneDiv.appendChild(sub);
+        }
+        var grid = document.createElement('div');
+        grid.className = 'deck-detail-cards';
+        cardList.forEach(function(card) {
+          var cardDiv = document.createElement('div');
+          cardDiv.className = 'deck-detail-card';
+          cardDiv.onclick = function() { openCardModal(card.name); };
+          var img = document.createElement('img');
+          img.className = 'deck-detail-card-img';
+          img.alt = card.name;
+          var nameLabel = document.createElement('div');
+          nameLabel.className = 'deck-detail-card-name';
+          nameLabel.textContent = card.name;
+          cardDiv.appendChild(img);
+          cardDiv.appendChild(nameLabel);
+          if (card.qty > 1) {
+            var badge = document.createElement('div');
+            badge.className = 'deck-detail-card-qty';
+            badge.textContent = 'x' + card.qty;
+            cardDiv.appendChild(badge);
+          }
+          grid.appendChild(cardDiv);
+          fetch('https://db.ygoprodeck.com/api/v7/cardinfo.php?name=' + encodeURIComponent(card.name))
+            .then(function(r) { return r.ok ? r.json() : null; })
+            .then(function(data) {
+              if (data && data.data && data.data[0] && data.data[0].card_images) {
+                img.src = data.data[0].card_images[0].image_url_small;
+              }
+            })
+            .catch(function() {});
+        });
+        zoneDiv.appendChild(grid);
+      }
+
+      var subtypeOrder = ['fusion','synchro','xyz','link','ritual','effect','normal','other'];
+      var subtypeLabels = { fusion:'Fusion', synchro:'Synchro', xyz:'Xyz', link:'Link', ritual:'Ritual', effect:'Effect', normal:'Normal', other:'Other' };
+      var firstMonsterSection = true;
+      subtypeOrder.forEach(function(st) {
+        if (monstersBySubtype[st].length) {
+          renderCardRow(monstersBySubtype[st], firstMonsterSection ? 'Monsters' : null, subtypeLabels[st]);
+          firstMonsterSection = false;
+        }
+      });
+      renderCardRow(spells, 'Spells', null);
+      renderCardRow(traps, 'Traps', null);
+
+      content.appendChild(zoneDiv);
+    });
+
+    if (deck.missingCards && deck.missingCards.length) {
+      var missingSection = document.createElement('div');
+      missingSection.className = 'deck-detail-zone';
+      missingSection.style.marginTop = '24px';
+      var missingHeader = document.createElement('div');
+      missingHeader.className = 'deck-detail-zone-header';
+      missingHeader.style.color = 'var(--gold)';
+      missingHeader.innerHTML = '&#128161; Cards Needed for Completion';
+      missingSection.appendChild(missingHeader);
+      var missingBody = document.createElement('div');
+      missingBody.style.cssText = 'padding:12px 16px;font-size:13px;color:var(--silver);line-height:1.8';
+      var missingHTML = '';
+      deck.missingCards.forEach(function(m) {
+        var icon = m.type === 'main' ? '🃏' : m.type === 'extra' ? '⭐' : '💫';
+        missingHTML += '<div style="display:flex;justify-content:space-between;padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--gold-dim)">';
+        missingHTML += '<span>' + icon + ' ' + m.description + '</span>';
+        missingHTML += '<span style="color:var(--gold);font-family:Cinzel,serif;font-weight:600">~' + m.count + ' cards</span></div>';
+      });
+      missingBody.innerHTML = missingHTML;
+      missingSection.appendChild(missingBody);
+      content.appendChild(missingSection);
+    }
+  }
+
+  window.closeSuggestionDetail = function() {
+    document.getElementById('suggestionDetail').style.display = 'none';
+    document.getElementById('suggestionsList').style.display = 'block';
+  };
+
+window.viewSuggestedDeck = function(suggestion) {
+  viewSuggestedDeckInline(buildDeckData(suggestion));
 };
+
 
   // ── Theme ──────────────────────────────────────────────────
   window.applyTheme = function(theme) {
@@ -3874,7 +3693,7 @@ window.viewSuggestedDeck = function(suggestion) {
       card.onclick = function(e) {
         // Don't open detail modal if clicking on action buttons
         if (e.target.closest('.deck-action-btn')) return;
-        openDeckDetailModal(d);
+        switchTab('suggestions'); setTimeout(function(){ openDeckDetailModal(d); }, 50);
       };
 
       var nameEl = document.createElement('div');
