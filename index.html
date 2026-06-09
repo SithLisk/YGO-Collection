@@ -762,6 +762,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <th onclick="sortBy('type')"      class="sortable" style="min-width:80px">Type <span class="sort-icon" id="si-type"></span></th>
           <th onclick="sortBy('attribute')" class="sortable" style="min-width:70px">Attr <span class="sort-icon" id="si-attribute"></span></th>
           <th onclick="sortBy('archetype')" class="sortable" style="min-width:90px">Archetype <span class="sort-icon" id="si-archetype"></span></th>
+          <th style="min-width:60px">GP</th>
           <th onclick="sortBy('atk')"       class="sortable" style="min-width:80px">ATK/DEF <span class="sort-icon" id="si-atk"></span></th>
           <th onclick="sortBy('cardNumber')" class="sortable" style="min-width:85px">Card No. <span class="sort-icon" id="si-cardNumber"></span></th>
           <th onclick="sortBy('rarity')"    class="sortable" style="min-width:100px">Rarity <span class="sort-icon" id="si-rarity"></span></th>
@@ -772,7 +773,7 @@ td { padding: 7px 8px; vertical-align: middle; color: var(--silver); white-space
           <th style="width:40px;position:sticky;right:0;background:var(--deep);z-index:1"></th>
         </tr></thead>
         <tbody id="collBody">
-          <tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
+          <tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Loading&hellip;</p></div></td></tr>
         </tbody>
       </table>
     </div>
@@ -1167,7 +1168,7 @@ window.onload = function() {
   }
 
   function doSearch(q) {
-    var base = 'https://db.ygoprodeck.com/api/v7/cardinfo.php';
+    var base = 'https://db.ygoprodeck.com/api/v7/cardinfo.php?format=genesys&misc=yes';
 
     // Build a set of query variants to try in order
     var norm = normalize(q);
@@ -1320,6 +1321,10 @@ window.onload = function() {
       mh += '<span class="mpill" style="background:rgba(100,100,100,0.1);border-color:rgba(150,150,150,0.3);color:var(--silver-dim)">Not in collection</span>';
     }
     
+    var gp = card.misc_info && card.misc_info[0] && card.misc_info[0].genesys_points;
+    if (gp) {
+      mh += '<span class="mpill" style="background:rgba(240,192,64,0.15);border-color:rgba(240,192,64,0.5);color:var(--gold);font-weight:700">&#9670; ' + gp + ' GP</span>';
+    }
     document.getElementById('previewMeta').innerHTML = mh;
 
     var ad = document.getElementById('previewAtkDef');
@@ -1508,6 +1513,7 @@ window.onload = function() {
       edition: document.getElementById('fEdition').value,
       qty: parseInt(document.getElementById('fQty').value)||1,
       price: 0,
+      genesysPoints: (c.misc_info && c.misc_info[0] && c.misc_info[0].genesys_points) || null,
       notes: '',
       addedAt: Date.now()
     }).then(function() {
@@ -1862,7 +1868,7 @@ window.onload = function() {
   function renderTable() {
     var tbody = document.getElementById('collBody');
     if (!cards.length) {
-      tbody.innerHTML = '<tr><td colspan="12"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
+      tbody.innerHTML = '<tr><td colspan="13"><div class="empty-st"><div class="empty-ic">&#9876;</div><p class="empty-tx">Your collection awaits</p></div></td></tr>';
       updateStats(); 
       updatePagination();
       return;
@@ -1893,6 +1899,7 @@ window.onload = function() {
       h += '<td class="td-sm">' + esc(getTypeDisplay(e)) + '</td>';
       h += '<td class="td-sm">' + attrBadge(e.attribute) + '</td>';
       h += '<td class="td-sm">' + esc(e.archetype) + '</td>';
+      h += '<td class="td-sm">' + (e.genesysPoints ? '<span style="font-family:Cinzel,serif;font-size:10px;color:var(--gold);font-weight:700;white-space:nowrap">&#9670; ' + e.genesysPoints + ' GP</span>' : '<span style="color:var(--silver-dim)">—</span>') + '</td>';
       h += '<td class="td-atk">' + (e.atk!=='—' ? e.atk+' / '+e.def : '—') + '</td>';
       h += '<td class="td-sm">' + esc(e.cardNumber||e.setCode||'—') + '</td>';
       h += '<td class="rtxt ' + rClass(e.rarity) + '">' + esc(e.rarity) + '</td>';
