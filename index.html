@@ -3176,6 +3176,7 @@ window.onload = function() {
   // ══ Deck Suggestions ════════════════════════════════════════
   var allSuggestions = [];
   var filteredSuggestions = [];
+  var recommendationCache = {};
 
   // Popular archetypes to suggest
   var popularArchetypes = [
@@ -3189,71 +3190,149 @@ window.onload = function() {
     'Branded', 'Tearlaments', 'Kashtira', 'Purrely', 'Snake-Eye'
   ];
 
-  window.loadDeckSuggestions = function() {
-    if (!authed) {
-      toast('Please unlock to view suggestions');
-      return;
-    }
-    if (!cards || cards.length === 0) {
-      document.getElementById('suggestionsGrid').innerHTML = '<div class="deck-empty">Add cards to your collection to see deck suggestions</div>';
-      return;
-    }
-    document.getElementById('suggestionsLoading').style.display = 'block';
-    document.getElementById('suggestionsGrid').innerHTML = '';
-    allSuggestions = analyzeArchetypeSuggestions();
-    allSuggestions.sort(function(a, b) {
-      if (b.matchPercent !== a.matchPercent) return b.matchPercent - a.matchPercent;
-      return b.ownedCount - a.ownedCount;
-    });
-    filteredSuggestions = allSuggestions.slice();
-    document.getElementById('suggestionsLoading').style.display = 'none';
-    renderSuggestions();
-  };
-
-  function analyzeArchetypeSuggestions() {
-    var suggestions = [];
-    var archetypeCards = {};
-    cards.forEach(function(card) {
-      var archetype = card.archetype;
-      if (archetype && archetype !== '—') {
-        if (!archetypeCards[archetype]) archetypeCards[archetype] = [];
-        archetypeCards[archetype].push(card);
-      }
-    });
-    Object.keys(archetypeCards).forEach(function(archetype) {
-      var archetypeCardList = archetypeCards[archetype];
-      var totalOwned = archetypeCardList.reduce(function(sum, c) { return sum + (c.qty || 0); }, 0);
-      var uniqueCards = archetypeCardList.length;
-      if (totalOwned >= 5) {
-        var estimatedDeckSize = Math.max(40, totalOwned + 10);
-        var matchPercent = Math.min(100, Math.round((totalOwned / estimatedDeckSize) * 100));
-        suggestions.push({
-          name: archetype + ' Deck',
-          archetype: archetype,
-          ownedCount: totalOwned,
-          uniqueCards: uniqueCards,
-          totalCards: estimatedDeckSize,
-          matchPercent: matchPercent,
-          cards: archetypeCardList,
-          missingCards: []
-        });
-      }
-    });
-    if (suggestions.length === 0) {
-      var totalOwned = cards.reduce(function(s, c) { return s + (c.qty || 0); }, 0);
-      suggestions.push({
-        name: 'Mixed Strategy Deck',
-        archetype: 'Generic',
-        ownedCount: totalOwned,
-        uniqueCards: cards.length,
-        totalCards: 40,
-        matchPercent: Math.min(100, Math.round((totalOwned / 40) * 100)),
-        cards: cards,
-        missingCards: []
-      });
-    }
-    return suggestions;
+window.loadDeckSuggestions = async function() {
+  if (!authed) {
+    toast('Please unlock to view suggestions');
+    return;
   }
+
+  if (!cards || cards.length === 0) {
+    document.getElementById('suggestionsGrid').innerHTML =
+      '<div class="deck-empty">Add cards to your collection to see deck suggestions</div>';
+    return;
+  }
+
+  document.getElementById('suggestionsLoading').style.display = 'block';
+  document.getElementById('suggestionsGrid').innerHTML = '';
+
+  allSuggestions = await analyzeArchetypeSuggestions();
+
+  allSuggestions.sort(function(a, b) {
+    if (b.matchPercent !== a.matchPercent)
+      return b.matchPercent - a.matchPercent;
+
+    return b.ownedCount - a.ownedCount;
+  });
+
+  filteredSuggestions = allSuggestions.slice();
+
+  document.getElementById('suggestionsLoading').style.display = 'none';
+
+renderSuggestions();
+};
+
+async function analyzeArchetypeSuggestions() {
+  var suggestions = [];
+  var archetypeCards = {};
+
+  cards.forEach(function(card) {
+    if (!card.archetype || card.archetype === '—')
+      return;
+
+    if (!archetypeCards[card.archetype])
+      archetypeCards[card.archetype] = [];
+
+    archetypeCards[card.archetype].push(card);
+  });
+
+  for (const archetype of Object.keys(archetypeCards)) {
+
+    const ownedCards = archetypeCards[archetype];
+
+    const ownedNames = new Set(
+      ownedCards.map(c => c.name.toLowerCase())
+    );
+
+    let apiCards = [];
+
+    try {
+
+      if (!recommendationCache[archetype]) {
+
+        const response = await fetch(
+          'https://db.ygoprodeck.com/api/v7/cardinfo.php?archetype=' +
+          encodeURIComponent(archetype)
+        );
+
+        const data = await response.json();
+
+        recommendationCache[archetype] =
+          data.data || [];
+      }
+
+      apiCards = recommendationCache[archetype];
+
+    } catch(e) {
+      console.error(e);
+      continue;
+    }
+
+    const recommendations = [];
+
+    apiCards.forEach(function(card) {
+
+      if (
+        ownedNames.has(card.name.toLowerCase())
+      ) {
+        return;
+      }
+
+      let score = 0;
+
+      score += 100;
+
+      if (
+        card.desc &&
+        card.desc.toLowerCase().includes(
+          archetype.toLowerCase()
+        )
+      ) {
+        score += 50;
+      }
+
+      recommendations.push({
+        name: card.name,
+        score: score,
+        image:
+          card.card_images &&
+          card.card_images[0]
+            ? card.card_images[0].image_url_small
+            : null
+      });
+
+    });
+
+    recommendations.sort(
+      (a,b)=>b.score-a.score
+    );
+
+    const totalOwned =
+      ownedCards.reduce(
+        (s,c)=>s+(c.qty||0),0
+      );
+
+    const targetDeckSize = 45;
+
+    suggestions.push({
+      name: archetype + ' Deck',
+      archetype: archetype,
+      ownedCount: totalOwned,
+      uniqueCards: ownedCards.length,
+      totalCards: targetDeckSize,
+      matchPercent: Math.min(
+        100,
+        Math.round(
+          (totalOwned / targetDeckSize) * 100
+        )
+      ),
+      cards: ownedCards,
+      recommendations: recommendations.slice(0,15)
+    });
+
+  }
+
+  return suggestions;
+}
 
   window.filterSuggestions = function() {
     var minMatch = parseInt(document.getElementById('matchFilter').value);
@@ -3302,6 +3381,27 @@ window.onload = function() {
         '<div class="suggestion-meta-item"><div class="suggestion-meta-label">Unique</div><div class="suggestion-meta-value">' + suggestion.uniqueCards + '</div></div>' +
         '<div class="suggestion-meta-item"><div class="suggestion-meta-label">Archetype</div><div class="suggestion-meta-value">' + suggestion.archetype + '</div></div>';
       card.appendChild(meta);
+
+      // Recommended cards section
+      if (
+        suggestion.recommendations &&
+        suggestion.recommendations.length
+      ) {
+        var recDiv = document.createElement('div');
+        recDiv.className = 'suggestion-recommendations';
+      
+        recDiv.innerHTML =
+          '<div class="suggestion-meta-label" style="margin-bottom:8px;">Recommended Additions</div>' +
+          suggestion.recommendations
+            .slice(0, 5)
+            .map(function(r) {
+              return '<div style="font-size:12px;padding:2px 0;">• ' + r.name + '</div>';
+            })
+            .join('');
+      
+        card.appendChild(recDiv);
+      }
+      
       var actions = document.createElement('div');
       actions.className = 'suggestion-actions';
       var viewBtn = document.createElement('button');
