@@ -3582,31 +3582,46 @@ window.viewSuggestedDeck = function(suggestion) {
   loadTheme();
 
   // ── Tab switching ─────────────────────────────────────────
-  window.switchTab = function(tab) {
-    ['collection','stats','decks','wishlist','suggestions','lifepoints'].forEach(function(t) {
-      var pane = document.getElementById('pane-' + t);
-      var button = document.getElementById('tab-' + t);
-      if (pane) pane.classList.toggle('active', t === tab);
-      if (button) button.classList.toggle('active', t === tab);
-    });
-    var deckBuilder = document.getElementById('deckBuilderSection') || document.querySelector('.deck-section');
-    if (deckBuilder) deckBuilder.style.display = tab === 'collection' ? '' : 'none';
-    if (tab === 'stats') {
-      setTimeout(function() {
-        renderStats();
-      }, 100);
+window.switchTab = function(tab) {
+  ['collection','stats','decks','wishlist','suggestions','lifepoints'].forEach(function(t) {
+    var pane = document.getElementById('pane-' + t);
+    var button = document.getElementById('tab-' + t);
+
+    if (pane) pane.classList.toggle('active', t === tab);
+    if (button) button.classList.toggle('active', t === tab);
+  });
+
+  var deckBuilder = document.getElementById('deckBuilderSection') ||
+                    document.querySelector('.deck-section');
+
+  if (deckBuilder) {
+    deckBuilder.style.display = tab === 'collection' ? '' : 'none';
+  }
+
+  if (tab === 'stats') {
+    setTimeout(function() {
+      renderStats();
+    }, 100);
+  }
+
+  if (tab === 'decks') {
+    renderSavedDecks();
+  }
+
+  if (tab === 'wishlist') {
+    renderWishlist();
+  }
+
+  if (tab === 'suggestions') {
+    if (allSuggestions.length === 0) {
+      loadDeckSuggestions();
     }
-    if (tab === 'decks') renderSavedDecks();
-    if (tab === 'wishlist') renderWishlist();
-    if (tab === 'suggestions') {
-      if (allSuggestions.length === 0) {
-        loadDeckSuggestions();
-      }
-    if (tab === 'lifepoints') {
-      lpRender();
-      }
-    }
-  };
+  }
+
+  if (tab === 'lifepoints') {
+    lpRender();
+  }
+};
 
   // ── Save deck to Firestore ─────────────────────────────────
   window.saveDeck = function() {
